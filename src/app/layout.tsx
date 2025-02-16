@@ -28,6 +28,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <footer>
+          Hecho con amor por Guillermo
+        </footer>
       </body>
     </html>
   );
