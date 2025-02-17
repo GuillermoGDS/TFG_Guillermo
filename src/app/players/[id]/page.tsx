@@ -1,34 +1,112 @@
-import { notFound } from "next/navigation"
 import Image from "next/image"
-
-const players = [
-  { name: "LeBron James", image: "/lebron-james.png", id: "lebron-james" },
-  { name: "Stephen Curry", image: "/stephen-curry.png", id: "stephen-curry" },
-  { name: "Kevin Durant", image: "/kevin-durant.png", id: "kevin-durant" },
-  { name: "Luka Doncic", image: "/luka-doncic.png", id: "luka-doncic" },
-  { name: "Giannis Antetokounmpo", image: "/giannis-antetokounmpo.webp", id: "giannis-antetokounmpo" },
-  { name: "Nikola Jokic", image: "/nikola-jokic.jpg", id: "nikola-jokic" },
-]
+import Link from "next/link"
+import { notFound } from "next/navigation"
+import { playersData } from "@/app/players-data"
 
 export default function PlayerPage({ params }: { params: { id: string } }) {
-  const player = players.find((p) => p.id === params.id)
+  const playerId = params.id
+  const player = playersData[playerId]
 
   if (!player) {
     notFound()
   }
 
+  const simpleStats = [
+    { name: "Points per game", value: player.stats.ppg.toString(), id: "ppg" },
+    { name: "Field goal %", value: player.stats.fg_percentage, id: "fg_percentage" },
+    { name: "3-point %", value: player.stats.three_point_percentage, id: "three_point_percentage" },
+    { name: "Free throw %", value: player.stats.ft_percentage, id: "ft_percentage" },
+    { name: "Total rebounds", value: player.stats.total_rebounds.toString(), id: "total_rebounds" },
+    { name: "Offensive rebounds", value: player.stats.offensive_rebounds.toString(), id: "offensive_rebounds" },
+    { name: "Defensive rebounds", value: player.stats.defensive_rebounds.toString(), id: "defensive_rebounds" },
+    { name: "Assists per game", value: player.stats.apg.toString(), id: "apg" },
+    { name: "Steals per game", value: player.stats.spg.toString(), id: "spg" },
+    { name: "Blocks per game", value: player.stats.bpg.toString(), id: "bpg" },
+    { name: "Turnovers", value: player.stats.turnovers.toString(), id: "turnovers" },
+    { name: "Fouls", value: player.stats.fouls.toString(), id: "fouls" },
+  ]
+
+  const advancedStats = [
+    { name: "Player Efficiency Rating (PER)", value: player.advancedStats.per.toString(), id: "per" },
+    { name: "Plus-Minus (+/-)", value: player.advancedStats.plus_minus, id: "plus_minus" },
+    { name: "Usage Rate (USG%)", value: player.advancedStats.usg_percentage, id: "usg_percentage" },
+    { name: "True Shooting % (TS%)", value: player.advancedStats.ts_percentage, id: "ts_percentage" },
+    {
+      name: "Assist to Turnover Ratio (AST/TO)",
+      value: player.advancedStats.ast_to_ratio.toString(),
+      id: "ast_to_ratio",
+    },
+    { name: "Win Shares (WS)", value: player.advancedStats.win_shares.toString(), id: "win_shares" },
+    { name: "Offensive Rating (OffRtg)", value: player.advancedStats.off_rtg.toString(), id: "off_rtg" },
+    { name: "Defensive Rating (DefRtg)", value: player.advancedStats.def_rtg.toString(), id: "def_rtg" },
+    { name: "Net Rating (NetRtg)", value: player.advancedStats.net_rtg, id: "net_rtg" },
+    { name: "Possessions", value: player.advancedStats.possessions.toString(), id: "possessions" },
+    { name: "Points Per Possession (PPP)", value: player.advancedStats.ppp.toString(), id: "ppp" },
+  ]
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 text-white bg-[#0a0a2a]">
-      <h1 className="text-3xl font-bold mb-4">{player.name}</h1>
-      <Image
-        src={player.image || "/placeholder.svg"}
-        alt={player.name}
-        width={300}
-        height={400}
-        className="rounded-md"
-      />
-      {/* Add more player details here */}
+    <div className="min-h-screen text-white bg-[#0a0a2a]">
+      {/* Banner de la imagen del jugador */}
+      <div className="fixed top-0 left-0 w-full z-10 bg-gradient-to-r from-blue-600 to-purple-700 py-4 flex justify-center items-center">
+        <div className="relative w-96 h-40">
+          <Image
+            src={player.image || "/placeholder.svg"}
+            alt={player.name}
+            layout="fill"
+            objectFit="cover"
+            className="rounded-lg opacity-200"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a2a] to-transparent"></div>
+        </div>
+      </div>
+
+      {/* Nombre del jugador debajo del banner */}
+      <div className="pt-48 max-w-7xl mx-auto px-4 py-4 text-center">
+        <h1 className="text-4xl font-bold">{player.name}</h1>
+        <p className="text-xl">{player.position}</p>
+      </div>
+
+      {/* Contenido de las estadísticas */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <Link
+          href="/"
+          className="inline-block mb-8 bg-gray-700 text-white px-4 py-2 rounded-md hover:bg-gray-600 transition-colors"
+        >
+          ← Back to Home
+        </Link>
+
+        <h2 className="text-3xl font-bold my-8">Simple Stats</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {simpleStats.map((stat) => (
+            <div key={stat.id} className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
+              <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
+              <p className="text-2xl font-bold">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <h2 className="text-3xl font-bold my-8">Advanced Stats</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {advancedStats.map((stat) => (
+            <div key={stat.id} className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
+              <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
+              <p className="text-2xl font-bold">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Heatmap */}
+        <div className="my-8">
+          <h2 className="text-2xl font-bold mb-4">Heatmap</h2>
+          <Image
+            src={player.heatmap || "/placeholder.svg"}
+            alt={`${player.name} Heatmap`}
+            width={500}
+            height={300}
+            className="rounded-lg"
+          />
+        </div>
+      </div>
     </div>
   )
 }
-

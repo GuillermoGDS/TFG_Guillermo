@@ -4,23 +4,18 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
+import { playersData } from "@/app/players-data" // Correcta importació
 
 export default function Home() {
   const [section, setSection] = useState("Team")
 
-  const players = [
-    { name: "LeBron James", image: "/lebron-james.png", id: "lebron-james", position: "SF" },
-    { name: "Stephen Curry", image: "/stephen-curry.png", id: "stephen-curry", position: "PG" },
-    { name: "Kevin Durant", image: "/kevin-durant.png", id: "kevin-durant", position: "SF" },
-    { name: "Luka Doncic", image: "/luka-doncic.png", id: "luka-doncic", position: "PG" },
-    {
-      name: "Giannis Antetokounmpo",
-      image: "/giannis-antetokounmpo.webp",
-      id: "giannis-antetokounmpo",
-      position: "PF",
-    },
-    { name: "Nikola Jokic", image: "/nikola-jokic.jpg", id: "nikola-jokic", position: "C" },
-  ]
+   // Usamos playersData para construir la lista de jugadores
+   const players = Object.keys(playersData).map((id) => ({
+    name: playersData[id].name,
+    image: playersData[id].image,
+    id: id,
+    position: playersData[id].position,
+  }))
 
   const simpleStats = [
     { name: "Points per game", value: "30.5", id: "ppg" },
