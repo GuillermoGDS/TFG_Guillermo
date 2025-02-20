@@ -76,21 +76,27 @@ export default function PlayerPage({ params }: { params: { id: string } }) {
         </Link>
 
         <h2 className="text-3xl font-bold my-8">Simple Stats</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="flex overflow-x-auto gap-6 pb-8 scrollbar-hide">
           {simpleStats.map((stat) => (
-            <div key={stat.id} className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
-              <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
-              <p className="text-2xl font-bold">{stat.value}</p>
+            <div
+              key={stat.id}
+              className="w-48 h-48 flex-shrink-0 bg-gray-800 rounded-xl p-6 text-center shadow-lg flex flex-col justify-center"
+            >
+              <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
+              <p className="text-3xl font-bold">{stat.value}</p>
             </div>
           ))}
         </div>
 
         <h2 className="text-3xl font-bold my-8">Advanced Stats</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="flex overflow-x-auto gap-6 pb-8 scrollbar-hide">
           {advancedStats.map((stat) => (
-            <div key={stat.id} className="bg-gray-800 rounded-lg p-4 text-center shadow-lg">
-              <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
-              <p className="text-2xl font-bold">{stat.value}</p>
+            <div
+              key={stat.id}
+              className="w-48 h-48 flex-shrink-0 bg-gray-800 rounded-xl p-6 text-center shadow-lg flex flex-col justify-center"
+            >
+              <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
+              <p className="text-3xl font-bold">{stat.value}</p>
             </div>
           ))}
         </div>
@@ -110,3 +116,4 @@ export default function PlayerPage({ params }: { params: { id: string } }) {
     </div>
   )
 }
+

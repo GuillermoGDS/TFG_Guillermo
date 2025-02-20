@@ -19,3 +19,13 @@ body {
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Ocultar la barra de desplazamiento pero mantener la funcionalidad táctil */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Oculta la barra de desplazamiento en navegadores basados en Webkit (Chrome, Safari) */
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Para Internet Explorer 10+ */
+  scrollbar-width: none;  /* Para Firefox */
+}

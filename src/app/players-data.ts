@@ -42,11 +42,11 @@ export type PlayerStats = {
       image: "/lebron-james.png",
       position: "SF",
       stats: {
-        ppg: 27.2,
+        ppg: 2888888.2,
         fg_percentage: "70.4%",
         three_point_percentage: "34.6%",
         ft_percentage: "73.4%",
-        total_rebounds: 7.4,
+        total_rebounds: 700000000.4,
         offensive_rebounds: 1.2,
         defensive_rebounds: 6.2,
         apg: 7.2,

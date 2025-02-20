@@ -4,13 +4,12 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
-import { playersData } from "@/app/players-data" // Correcta importació
+import { playersData } from "@/app/players-data"
 
 export default function Home() {
   const [section, setSection] = useState("Team")
 
-   // Usamos playersData para construir la lista de jugadores
-   const players = Object.keys(playersData).map((id) => ({
+  const players = Object.keys(playersData).map((id) => ({
     name: playersData[id].name,
     image: playersData[id].image,
     id: id,
@@ -66,9 +65,7 @@ export default function Home() {
               <li key={item} className="flex-1">
                 <button
                   onClick={() => setSection(item)}
-                  className={`w-full py-2 text-center rounded-md transition-all duration-300 ${
-                    section === item ? "bg-blue-600 text-white shadow-lg" : "text-gray-300 hover:bg-gray-600"
-                  }`}
+                  className={`w-full py-2 text-center rounded-md transition-all duration-300 ${section === item ? "bg-blue-600 text-white shadow-lg" : "text-gray-300 hover:bg-gray-600"}`}
                 >
                   {item}
                 </button>
@@ -110,24 +107,24 @@ export default function Home() {
             </div>
 
             <h2 className="text-3xl font-bold my-8">Simple Stats</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="flex overflow-x-auto gap-6 pb-8 scrollbar-hide">
               {simpleStats.map((stat) => (
                 <Link href={`/simple-stats/${stat.id}`} key={stat.id}>
-                  <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg cursor-pointer transform transition-all hover:scale-105">
-                    <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
+                  <div className="w-48 h-48 flex-shrink-0 bg-gray-800 rounded-xl p-6 text-center shadow-lg cursor-pointer transform transition-all hover:scale-105 flex flex-col justify-center">
+                    <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
+                    <p className="text-3xl font-bold">{stat.value}</p>
                   </div>
                 </Link>
               ))}
             </div>
 
             <h2 className="text-3xl font-bold my-8">Advanced Stats</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="flex overflow-x-auto gap-6 pb-8 scrollbar-hide">
               {advancedStats.map((stat) => (
                 <Link href={`/advanced-stats/${stat.id}`} key={stat.id}>
-                  <div className="bg-gray-800 rounded-lg p-4 text-center shadow-lg cursor-pointer transform transition-all hover:scale-105">
-                    <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
+                  <div className="w-48 h-48 flex-shrink-0 bg-gray-800 rounded-xl p-6 text-center shadow-lg cursor-pointer transform transition-all hover:scale-105 flex flex-col justify-center">
+                    <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
+                    <p className="text-3xl font-bold">{stat.value}</p>
                   </div>
                 </Link>
               ))}
