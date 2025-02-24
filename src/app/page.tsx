@@ -1,13 +1,83 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
 import { playersData } from "@/app/players-data"
 
+// Definir la interfaz para el tipo de datos de los juegos
+interface Game {
+  Game_ID: string;
+  GAME_DATE: string;
+  MATCHUP: string;
+}
+
+// Mapa de abreviaturas de equipos a nombres completos
+const teamNames: { [key: string]: string } = {
+  LAL: "Los Angeles Lakers",
+  BOS: "Boston Celtics",
+  MIA: "Miami Heat",
+  NYK: "New York Knicks",
+  GSW: "Golden State Warriors",
+  CHI: "Chicago Bulls",
+  PHI: "Philadelphia 76ers",
+  DAL: "Dallas Mavericks",
+  TOR: "Toronto Raptors",
+  MIL: "Milwaukee Bucks",
+  PHX: "Phoenix Suns",
+  SAC: "Sacramento Kings",
+  UTA: "Utah Jazz",
+  DET: "Detroit Pistons",
+  IND: "Indiana Pacers",
+  HOU: "Houston Rockets",
+  MEM: "Memphis Grizzlies",
+  MIN: "Minnesota Timberwolves",
+  ORL: "Orlando Magic",
+  ATL: "Atlanta Hawks",
+  CLE: "Cleveland Cavaliers",
+  WAS: "Washington Wizards",
+  CHA: "Charlotte Hornets",
+  OKC: "Oklahoma City Thunder",
+  LAC: "Los Angeles Clippers",
+  BKN: "Brooklyn Nets",
+  NOP: "New Orleans Pelicans",
+  POR: "Portland Trail Blazers",
+  SAS: "San Antonio Spurs",
+  DEN: "Denver Nuggets"
+}as const;
+
+type TeamKeys = keyof typeof teamNames;
+
+// Aquí, 'team' debe ser un valor de 'TeamKeys' (es decir, una de las claves definidas arriba)
+const team: TeamKeys = "LAL";  // Ejemplo de valor
+
+// Acceder al nombre completo del equipo de manera segura
+const teamName = teamNames[team];
+console.log(teamName); // "Los Angeles Lakers"
+
+
 export default function Home() {
   const [section, setSection] = useState("Team")
+  const [games, setGames] = useState<Game[]>([]) // Usar la interfaz Game
+
+  useEffect(() => {
+    async function fetchGames() {
+      try {
+        const response = await fetch("/api/games");
+  
+        // Verificamos el contenido de la respuesta antes de intentar parsearlo como JSON
+        const data = await response.json();
+        console.log(data); // Mostramos los datos de los partidos en consola para verificar
+  
+        setGames(data); // Guardamos los datos en el estado
+  
+      } catch (error) {
+        console.error("Error fetching games:", error);
+      }
+    }
+    fetchGames();
+  }, []);
 
   const players = Object.keys(playersData).map((id) => ({
     name: playersData[id].name,
@@ -45,16 +115,17 @@ export default function Home() {
     { name: "Points Per Possession (PPP)", value: "1.16", id: "ppp" },
   ]
 
-  const games = [
-    { opponent: "Golden State Warriors", date: "2023-11-15", id: "lakers-vs-warriors-20231115" },
-    { opponent: "Boston Celtics", date: "2023-11-18", id: "lakers-vs-celtics-20231118" },
-    { opponent: "Miami Heat", date: "2023-11-22", id: "lakers-vs-heat-20231122" },
-    { opponent: "Phoenix Suns", date: "2023-11-26", id: "lakers-vs-suns-20231126" },
-    { opponent: "Denver Nuggets", date: "2023-11-30", id: "lakers-vs-nuggets-20231130" },
-    { opponent: "Dallas Mavericks", date: "2023-12-04", id: "lakers-vs-mavericks-20231204" },
-    { opponent: "Milwaukee Bucks", date: "2023-12-08", id: "lakers-vs-bucks-20231208" },
-    { opponent: "Brooklyn Nets", date: "2023-12-12", id: "lakers-vs-nets-20231212" },
-  ]
+  // Función para reemplazar '@' por 'vs'
+  const formatMatchup = (matchup: string) => {
+    return matchup.replace('@', 'vs');
+  };
+
+  // Función para reemplazar las abreviaturas de los equipos con los nombres completos
+  const formatTeamNames = (matchup: string) => {
+    let teams = matchup.split(' ');
+    teams = teams.map(team => teamNames[team] || team); // Reemplaza las abreviaturas con nombres completos
+    return teams.join(' '); // Une los equipos de nuevo en una cadena
+  };
 
   return (
     <div className="flex flex-col items-center min-h-screen text-white bg-[#0a0a2a]">
@@ -78,13 +149,7 @@ export default function Home() {
       <div className="w-full max-w-7xl mx-auto px-4">
         {section === "Team" && (
           <>
-            <div className="flex items-center justify-between mb-8">
-              <div className="w-48 h-48 relative">
-                <Image src="/lakers-logo.png" alt="Lakers Logo" width={192} height={192} className="drop-shadow-lg" />
-              </div>
-              <h2 className="text-3xl font-bold">Players</h2>
-            </div>
-
+            <h2 className="text-3xl font-bold my-8">Players</h2>
             <div className="flex overflow-x-auto gap-6 pb-8 scrollbar-hide">
               {players.map((player) => (
                 <Link href={`/players/${player.id}`} key={player.id}>
@@ -134,33 +199,19 @@ export default function Home() {
 
         {section === "Games" && (
           <>
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-3xl font-bold">Upcoming Games</h2>
-              <Link
-                href="/games"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-              >
-                View All Games
-              </Link>
-            </div>
+            <h2 className="text-3xl font-bold my-8">Upcoming Games</h2>
             <div className="grid gap-4">
-              {games.slice(0, 4).map((game) => (
-                <Link href={`/games/${game.id}`} key={game.id}>
+              {games.map((game) => (
+                <Link href={`/games/${game.Game_ID}`} key={game.Game_ID}>
                   <div className="bg-gray-800 rounded-lg p-6 shadow-lg flex justify-between items-center cursor-pointer hover:bg-gray-700 transition-colors">
                     <div className="flex items-center">
                       <Image src="/lakers-logo.png" alt="Lakers Logo" width={64} height={64} className="mr-4" />
                       <div>
-                        <h3 className="text-xl font-semibold">Los Angeles Lakers vs {game.opponent}</h3>
-                        <p className="text-gray-400">
-                          {new Date(game.date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                          })}
-                        </p>
+                        <h3 className="text-xl font-semibold">{formatTeamNames(formatMatchup(game.MATCHUP))}</h3> {/* Aplicamos ambas funciones aquí */}
+                        <p className="text-gray-400">{game.GAME_DATE}</p>
                       </div>
                     </div>
+                    <span className="text-gray-400">{game.Game_ID}</span> {/* Game ID al final */}
                     <ChevronRight className="text-gray-400" />
                   </div>
                 </Link>
@@ -172,4 +223,3 @@ export default function Home() {
     </div>
   )
 }
-
