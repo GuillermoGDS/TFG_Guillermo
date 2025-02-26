@@ -37,7 +37,7 @@ export type PlayerStats = {
   }
   
   export const playersData: Record<string, PlayerData> = {
-    "lebron-james": {
+    "2544": {
       name: "LeBron James",
       image: "/lebron-james.png",
       position: "SF",
@@ -70,7 +70,9 @@ export type PlayerStats = {
       },
       heatmap: "/lebron.webp",
     },
-    "stephen-curry": {
+
+    //GOLDEN STATE WARRIORS
+    "201939": {
       name: "Stephen Curry",
       image: "/stephen-curry.png",
       position: "PG",
@@ -103,6 +105,112 @@ export type PlayerStats = {
       },
       heatmap: "/heatmaps/curry.png",
     },
+
+    "1626172": {
+      name: "Kevon Looney",
+      image: "/kevon-looney.png",
+      position: "PG",
+      stats: {
+        ppg: 30.1,
+        fg_percentage: "48.7%",
+        three_point_percentage: "42.3%",
+        ft_percentage: "91.6%",
+        total_rebounds: 5.5,
+        offensive_rebounds: 0.6,
+        defensive_rebounds: 4.9,
+        apg: 6.3,
+        spg: 1.4,
+        bpg: 0.4,
+        turnovers: 3.2,
+        fouls: 2.2,
+      },
+      advancedStats: {
+        per: 26.9,
+        plus_minus: "+7.5",
+        usg_percentage: "30.1%",
+        ts_percentage: "64.2%",
+        ast_to_ratio: 2.1,
+        win_shares: 11.7,
+        off_rtg: 118.2,
+        def_rtg: 109.5,
+        net_rtg: "+8.7",
+        possessions: 101.3,
+        ppp: 1.22,
+      },
+      heatmap: "/heatmaps/curry.png",
+    },
+
+    "1627780": {
+      name: "Gary Payton II",
+      image: "/gary-payton-II.png",
+      position: "PG",
+      stats: {
+        ppg: 30.1,
+        fg_percentage: "48.7%",
+        three_point_percentage: "42.3%",
+        ft_percentage: "91.6%",
+        total_rebounds: 5.5,
+        offensive_rebounds: 0.6,
+        defensive_rebounds: 4.9,
+        apg: 6.3,
+        spg: 1.4,
+        bpg: 0.4,
+        turnovers: 3.2,
+        fouls: 2.2,
+      },
+      advancedStats: {
+        per: 26.9,
+        plus_minus: "+7.5",
+        usg_percentage: "30.1%",
+        ts_percentage: "64.2%",
+        ast_to_ratio: 2.1,
+        win_shares: 11.7,
+        off_rtg: 118.2,
+        def_rtg: 109.5,
+        net_rtg: "+8.7",
+        possessions: 101.3,
+        ppp: 1.22,
+      },
+      heatmap: "/heatmaps/curry.png",
+    },
+
+    "1627814": {
+      name: "Damion Lee",
+      image: "/damion-lee.png",
+      position: "PG",
+      stats: {
+        ppg: 30.1,
+        fg_percentage: "48.7%",
+        three_point_percentage: "42.3%",
+        ft_percentage: "91.6%",
+        total_rebounds: 5.5,
+        offensive_rebounds: 0.6,
+        defensive_rebounds: 4.9,
+        apg: 6.3,
+        spg: 1.4,
+        bpg: 0.4,
+        turnovers: 3.2,
+        fouls: 2.2,
+      },
+      advancedStats: {
+        per: 26.9,
+        plus_minus: "+7.5",
+        usg_percentage: "30.1%",
+        ts_percentage: "64.2%",
+        ast_to_ratio: 2.1,
+        win_shares: 11.7,
+        off_rtg: 118.2,
+        def_rtg: 109.5,
+        net_rtg: "+8.7",
+        possessions: 101.3,
+        ppp: 1.22,
+      },
+      heatmap: "/heatmaps/curry.png",
+    },
+    
+    
+    
+
     "kevin-durant": {
       name: "Kevin Durant",
       image: "/kevin-durant.png",

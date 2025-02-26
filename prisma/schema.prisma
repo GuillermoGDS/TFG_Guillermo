@@ -31,37 +31,36 @@ model player_game_stats {
 }
 
 model player_game_stats_v2 {
-  SEASON_ID  String?   @db.VarChar(10)
-  Player_ID  Int
-  Game_ID    String    @db.VarChar(20)
-  GAME_DATE  DateTime? @db.Date  // Asegúrate de que tenga el "?"
-  MATCHUP    String?   @db.VarChar(50)
-  WL         String?   @db.Char(1)
-  MIN        Int?
-  FGM        Int?
-  FGA        Int?
-  FG_PCT     Float?    @db.Float
-  FG3M       Int?
-  FG3A       Int?
-  FG3_PCT    Float?    @db.Float
-  FTM        Int?
-  FTA        Int?
-  FT_PCT     Float?    @db.Float
-  OREB       Int?
-  DREB       Int?
-  REB        Int?
-  AST        Int?
-  STL        Int?
-  BLK        Int?
-  TOV        Int?
-  PF         Int?
-  PTS        Int?
-  PLUS_MINUS Int?
+  SEASON_ID       String?   @db.VarChar(10)
+  Player_ID       Int
+  Game_ID         String    @db.VarChar(20)
+  GAME_DATE       DateTime? @db.Date
+  MATCHUP         String?   @db.VarChar(50)
+  WL              String?   @db.Char(1)
+  MIN             Int?
+  FGM             Int?
+  FGA             Int?
+  FG_PCT          Float?    @db.Float
+  FG3M            Int?
+  FG3A            Int?
+  FG3_PCT         Float?    @db.Float
+  FTM             Int?
+  FTA             Int?
+  FT_PCT          Float?    @db.Float
+  OREB            Int?
+  DREB            Int?
+  REB             Int?
+  AST             Int?
+  STL             Int?
+  BLK             Int?
+  TOV             Int?
+  PF              Int?
+  PTS             Int?
+  PLUS_MINUS      Int?
   VIDEO_AVAILABLE Boolean?
 
   @@id([Game_ID, Player_ID])
 }
-
 
 model players_teams {
   player_id   String @id @db.VarChar(20)
