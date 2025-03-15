@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 
 const simpleStats = [
-  { name: "Points per game", value: "30.5", id: "ppg" },
+  { name: "Points per game", value: "31.5", id: "ppg" },
   { name: "Field goal %", value: "48.2%", id: "fg_percentage" },
   { name: "3-point %", value: "37.8%", id: "three_point_percentage" },
   { name: "Free throw %", value: "85.3%", id: "ft_percentage" },
