@@ -7,30 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model player_game_stats {
-  game_id     String  @db.VarChar(20)
-  player_id   String  @db.VarChar(20)
-  player_name String? @db.VarChar(100)
-  pts         Int?
-  fgm         Int?
-  fga         Int?
-  fg3m        Int?
-  fg3a        Int?
-  ftm         Int?
-  fta         Int?
-  ast         Int?
-  oreb        Int?
-  dreb        Int?
-  reb         Int?
-  stl         Int?
-  blk         Int?
-  tov         Int?
-  pf          Int?
-
-  @@id([game_id, player_id])
+model playersteams {
+  player_id   Int     @id
+  player_name String? @db.VarChar(255)
+  player_team String? @db.VarChar(255)
 }
 
-model player_game_stats_v2 {
+model stats {
   SEASON_ID       String?   @db.VarChar(10)
   Player_ID       Int
   Game_ID         String    @db.VarChar(20)
@@ -60,10 +43,4 @@ model player_game_stats_v2 {
   VIDEO_AVAILABLE Boolean?
 
   @@id([Game_ID, Player_ID])
-}
-
-model players_teams {
-  player_id   String @id @db.VarChar(20)
-  player_name String @db.VarChar(100)
-  team_name   String @db.VarChar(100)
 }

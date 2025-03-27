@@ -1,113 +1,124 @@
-// /app/api/team-stats/route.ts
-import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET() {
-  try {
-    const teamName = "Boston Celtics"; // Aquí pones el nombre del equipo que quieras
+const TEAM_NAME = "Los Angeles Lakers";
+const SEASON_ID = "22021";
 
-    // Obtener los IDs de los jugadores del equipo
-    const players = await prisma.players_teams.findMany({
-      where: { team_name: teamName },
+export async function GET(req) {
+  try {
+    // Get all games in the specified season
+    const gamesInSeason = await prisma.stats.findMany({
+      where: { SEASON_ID },
+      select: { Game_ID: true },
+      distinct: ['Game_ID']
+    });
+
+    const gameIdsInSeason = gamesInSeason.map(g => g.Game_ID);
+    
+    // Get players who played for the team in this season
+    const players = await prisma.playersteams.findMany({
+      where: { 
+        player_team: TEAM_NAME,
+        player_id: {
+          in: await prisma.stats.findMany({
+            where: { 
+              SEASON_ID, 
+              Game_ID: { in: gameIdsInSeason } 
+            },
+            select: { Player_ID: true },
+            distinct: ['Player_ID']
+          }).then(results => results.map(r => r.Player_ID))
+        }
+      },
       select: { player_id: true },
     });
 
-    const playerIds = players.map(player => parseInt(player.player_id));
+    const playerIds = players.map(p => p.player_id);
+    if (playerIds.length === 0) {
+      return NextResponse.json({ 
+        error: 'No players found for this team in the specified season' 
+      }, { status: 404 });
+    }
 
-    // Obtener estadísticas de todos los jugadores del equipo
-    const stats = await prisma.player_game_stats_v2.findMany({
-      where: { Player_ID: { in: playerIds } },
-      select: {
-        Game_ID: true,
-        MIN: true,
-        FGM: true,
-        FGA: true,
-        FG_PCT: true,
-        FG3M: true,
-        FG3A: true,
-        FG3_PCT: true,
-        FTM: true,
-        FTA: true,
-        FT_PCT: true,
-        OREB: true,
-        DREB: true,
-        REB: true,
-        AST: true,
-        STL: true,
-        BLK: true,
-        TOV: true,
-        PF: true,
-        PTS: true,
-        PLUS_MINUS: true,
+    // Get all stats for these players in this season
+    const stats = await prisma.stats.findMany({
+      where: {
+        Player_ID: { in: playerIds },
+        SEASON_ID: SEASON_ID,
       },
     });
 
     if (stats.length === 0) {
-      return NextResponse.json({ message: "No stats found for the team" });
+      return NextResponse.json({ 
+        error: 'No stats found for this team in the given season' 
+      }, { status: 404 });
     }
 
-    // Sumar las estadísticas del equipo
-    const teamTotals: Record<string, number> = {};
-    const gameIds: Set<string> = new Set(); // Para llevar la cuenta de cuántos partidos ha jugado el equipo
+    // Calculate totals across all games
+    const totals = {
+      PTS: 0, FGM: 0, FGA: 0, FG3M: 0, FG3A: 0, FTM: 0, FTA: 0,
+      REB: 0, OREB: 0, DREB: 0, AST: 0, STL: 0, BLK: 0, TOV: 0, PF: 0,
+      games: new Set() // Track unique games
+    };
 
-    // Sumar las estadísticas de todos los jugadores para cada partido
     stats.forEach(game => {
-      gameIds.add(game.Game_ID); // Añadir el ID de cada partido para contar cuántos partidos jugó el equipo
-
-      (Object.keys(game) as Array<keyof typeof game>).forEach(key => {
-        if (typeof game[key] === "number") {
-          teamTotals[key] = (teamTotals[key] || 0) + (game[key] as number);
-        }
-      });
+      totals.PTS += game.PTS ?? 0;
+      totals.FGM += game.FGM ?? 0;
+      totals.FGA += game.FGA ?? 0;
+      totals.FG3M += game.FG3M ?? 0;
+      totals.FG3A += game.FG3A ?? 0;
+      totals.FTM += game.FTM ?? 0;
+      totals.FTA += game.FTA ?? 0;
+      totals.REB += game.REB ?? 0;
+      totals.OREB += game.OREB ?? 0;
+      totals.DREB += game.DREB ?? 0;
+      totals.AST += game.AST ?? 0;
+      totals.STL += game.STL ?? 0;
+      totals.BLK += game.BLK ?? 0;
+      totals.TOV += game.TOV ?? 0;
+      totals.PF += game.PF ?? 0;
+      
+      totals.games.add(game.Game_ID);
     });
 
-    // Número total de partidos jugados por el equipo
-    const totalGames = gameIds.size;
-
-    // Calcular los promedios para el equipo
-    const teamAverages: Record<string, number> = {};
-
-    // Para los porcentajes, primero sumamos los intentos y luego calculamos el porcentaje final
-    // Para FG%
-    const totalFGM = teamTotals.FGM || 0;
-    const totalFGA = teamTotals.FGA || 0;
-    if (totalFGA > 0) {
-      teamAverages.FG_PCT = (totalFGM / totalFGA) * 100;
-    } else {
-      teamAverages.FG_PCT = 0; // Si no hay intentos, el porcentaje es 0
+    const totalGames = totals.games.size;
+    if (totalGames === 0) {
+      return NextResponse.json({ 
+        error: 'No games found for this team in the specified season' 
+      }, { status: 404 });
     }
 
-    // Para 3P%
-    const totalFG3M = teamTotals.FG3M || 0;
-    const totalFG3A = teamTotals.FG3A || 0;
-    if (totalFG3A > 0) {
-      teamAverages.FG3_PCT = (totalFG3M / totalFG3A) * 100;
-    } else {
-      teamAverages.FG3_PCT = 0;
-    }
+    // Calculate averages with proper decimal formatting for percentages
+    const teamAverages = {
+      PTS: totals.PTS / totalGames,
+      FG_PCT: totals.FGA > 0 ? parseFloat((totals.FGM / totals.FGA * 100).toFixed(1)) : 0,
+      FG3_PCT: totals.FG3A > 0 ? parseFloat((totals.FG3M / totals.FG3A * 100).toFixed(1)) : 0,
+      FT_PCT: totals.FTA > 0 ? parseFloat((totals.FTM / totals.FTA * 100).toFixed(1)) : 0,
+      REB: totals.REB / totalGames,
+      OREB: totals.OREB / totalGames,
+      DREB: totals.DREB / totalGames,
+      AST: totals.AST / totalGames,
+      STL: totals.STL / totalGames,
+      BLK: totals.BLK / totalGames,
+      TOV: totals.TOV / totalGames,
+      PF: totals.PF / totalGames,
+      totalGames: totalGames
+    };
 
-    // Para FT%
-    const totalFTM = teamTotals.FTM || 0;
-    const totalFTA = teamTotals.FTA || 0;
-    if (totalFTA > 0) {
-      teamAverages.FT_PCT = (totalFTM / totalFTA) * 100;
-    } else {
-      teamAverages.FT_PCT = 0;
-    }
-
-    // Para las demás estadísticas, simplemente calculamos el promedio de todos los valores
-    Object.keys(teamTotals).forEach(key => {
-      if (!key.includes("PCT")) {
-        teamAverages[key] = teamTotals[key] / totalGames;
-      }
+    return NextResponse.json({ 
+      team: TEAM_NAME,
+      season: SEASON_ID,
+      averages: teamAverages 
     });
-
-    // Devolver las estadísticas promedio del equipo
-    return NextResponse.json({ team: teamName, averages: teamAverages });
+    
   } catch (error) {
-    console.error("Error fetching team stats:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error('Error fetching team averages:', error);
+    return NextResponse.json({ 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }

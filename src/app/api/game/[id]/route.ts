@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     // Fetch game information
-    const gameInfo = await prisma.player_game_stats_v2.findFirst({
+    const gameInfo = await prisma.stats.findFirst({
       where: { Game_ID: gameId },
       select: {
         GAME_DATE: true,
@@ -32,7 +32,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const awayTeam = isHomeGame ? teams[1] : teams[0]
 
     // Fetch player stats for this game
-    const playerStats = await prisma.player_game_stats_v2.findMany({
+    const playerStats = await prisma.stats.findMany({
       where: { Game_ID: gameId },
       select: {
         Player_ID: true,

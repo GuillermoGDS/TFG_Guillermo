@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
-import { playersData } from "@/app/players-data"
 
 // Definir la interfaz para los tipos de datos
 interface Game {
@@ -16,6 +15,7 @@ interface Game {
 interface Player {
   player_id: string
   player_name: string
+  image: string
 }
 
 interface SimpleStat {
@@ -162,11 +162,11 @@ export default function Home() {
     fetchData()
   }, [])
 
-  // Combinar datos de API con la imagen de playersData
+  // Los jugadores ya vienen con sus imágenes desde la API
   const mergedPlayers = players.map((player) => ({
     id: player.player_id,
     name: player.player_name,
-    image: playersData[player.player_id]?.image || "/placeholder.svg",
+    image: player.image,
   }))
 
   const formatMatchup = (matchup: string) => {
@@ -239,7 +239,7 @@ export default function Home() {
                       <div className="relative h-80">
                         <Image
                           src={player.image || "/placeholder.svg"}
-                          alt={player.name}
+                          alt={player.name || `Basketball player`}
                           fill
                           className="object-cover"
                         />
@@ -325,7 +325,7 @@ export default function Home() {
                           <div className="bg-blue-600 rounded-full p-3 mr-4">
                             <Image
                               src="/lakers-logo.png"
-                              alt="Lakers Logo"
+                              alt="Los Angeles Lakers Team Logo"
                               width={48}
                               height={48}
                               className="rounded-full"

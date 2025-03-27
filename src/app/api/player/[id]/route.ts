@@ -29,25 +29,15 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 })
     }
 
-    // Buscar el nombre del jugador en la tabla players_teams
+    // Buscar el nombre del jugador en la tabla playersteams
     let playerName = null
-    const playerInfo = await prisma.players_teams.findFirst({
-      where: { player_id: playerId.toString() },
+    const playerInfo = await prisma.playersteams.findFirst({
+      where: { player_id: playerId },
       select: { player_name: true },
     })
 
     if (playerInfo) {
       playerName = playerInfo.player_name
-    } else {
-      // Si no se encuentra en players_teams, buscar en player_game_stats
-      const playerGameStats = await prisma.player_game_stats.findFirst({
-        where: { player_id: playerId.toString() },
-        select: { player_name: true },
-      })
-
-      if (playerGameStats && playerGameStats.player_name) {
-        playerName = playerGameStats.player_name
-      }
     }
 
     // Si aún no tenemos nombre, usar un valor por defecto
@@ -56,7 +46,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 
     // Buscar estadísticas del jugador
-    const stats = await prisma.player_game_stats_v2.findMany({
+    const stats = await prisma.stats.findMany({
       where: { Player_ID: playerId },
       select: {
         Game_ID: true,
@@ -119,4 +109,3 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

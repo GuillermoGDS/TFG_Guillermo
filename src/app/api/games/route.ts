@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const games = await prisma.player_game_stats_v2.findMany({
+    const games = await prisma.stats.findMany({
       where: {
-        MATCHUP: { contains: "LAL" }, // Busca "" en MATCHUP para cubrir "@LAL" y "LAL"
+        MATCHUP: { contains: "GSW" }, // Busca "" en MATCHUP para cubrir "@LAL" y "LAL"
       },
       select: {
         Game_ID: true,
