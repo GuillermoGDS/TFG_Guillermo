@@ -23,7 +23,7 @@ export default function PlayerPage() {
       try {
         setLoading(true)
 
-        // Fetch basic player data
+        // Fetch player data
         const res = await fetch(`/api/player/${id}`)
         if (!res.ok) throw new Error("Failed to fetch player data")
 
@@ -31,44 +31,25 @@ export default function PlayerPage() {
         setPlayerData({ name: data.name, image: data.image })
         setStats(data.averages)
 
-        // Fetch advanced stats
-        const advancedRes = await fetch(`/api/player/${id}/advanced-stats`, {
-          cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache",
+        // Format advanced stats from the main API response
+        const formattedAdvancedStats = [
+          { name: "Offensive Rating (OffRtg)", value: data.averages.OffRtg.toFixed(1) },
+          { name: "True Shooting % (TS%)", value: `${(data.averages.TS * 100).toFixed(1)}%` },
+          { name: "Effective Field Goal % (eFG%)", value: `${(data.averages.eFG * 100).toFixed(1)}%` },
+          { name: "Assist to Turnover Ratio (AST/TO)", value: data.averages.ASTtoTO.toFixed(2) },
+          { name: "Turnover Percentage (TOV%)", value: `${data.averages.TOVpercent.toFixed(1)}%` },
+          { name: "Usage Rate (USG%)", value: `${data.averages.USG.toFixed(1)}%` },
+          {
+            name: "Plus-Minus (+/-)",
+            value:
+              data.averages.PLUS_MINUS > 0
+                ? `+${data.averages.PLUS_MINUS.toFixed(1)}`
+                : data.averages.PLUS_MINUS.toFixed(1),
           },
-        })
-        if (advancedRes.ok) {
-          const advancedData = await advancedRes.json()
+        ]
 
-          // Format advanced stats for display
-          const formattedAdvancedStats = [
-            { name: "Player Efficiency Rating (PER)", value: advancedData.averages.PER.toFixed(1) },
-            {
-              name: "Plus-Minus (+/-)",
-              value:
-                advancedData.averages.PLUS_MINUS > 0
-                  ? `+${advancedData.averages.PLUS_MINUS.toFixed(1)}`
-                  : advancedData.averages.PLUS_MINUS.toFixed(1),
-            },
-            { name: "Usage Rate (USG%)", value: `${advancedData.averages.USG_PCT.toFixed(1)}%` },
-            { name: "True Shooting % (TS%)", value: `${advancedData.averages.TS_PCT.toFixed(1)}%` },
-            { name: "Assist to Turnover Ratio (AST/TO)", value: advancedData.averages.AST_TO_RATIO.toFixed(2) },
-            { name: "Win Shares (WS)", value: advancedData.averages.WIN_SHARES.toFixed(1) },
-            { name: "Offensive Rating (OffRtg)", value: advancedData.averages.OFF_RTG.toFixed(1) },
-            { name: "Defensive Rating (DefRtg)", value: advancedData.averages.DEF_RTG.toFixed(1) },
-            {
-              name: "Net Rating (NetRtg)",
-              value:
-                advancedData.averages.NET_RTG > 0
-                  ? `+${advancedData.averages.NET_RTG.toFixed(1)}`
-                  : advancedData.averages.NET_RTG.toFixed(1),
-            },
-          ]
-
-          setAdvancedStats(formattedAdvancedStats)
-          setIsAdvancedStatsProvisional(advancedData.provisional || false)
-        }
+        setAdvancedStats(formattedAdvancedStats)
+        setIsAdvancedStatsProvisional(false) // Since these are calculated directly, they're not provisional
       } catch (error) {
         console.error("Error fetching player stats:", error)
       } finally {

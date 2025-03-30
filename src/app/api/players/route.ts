@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { playersData } from "@/app/players-data"
+import { TEAM_NAME } from "@/app/team-config"
+
+
+
 
 // Usar una única instancia de Prisma para evitar memory leaks en desarrollo
 const prisma = global.prisma || new PrismaClient()
@@ -8,10 +12,10 @@ if (process.env.NODE_ENV === "development") global.prisma = prisma
 
 export async function GET() {
   try {
-    // Buscar jugadores en un equipo específico
+    // Buscar jugadores en el equipo configurado
     const players = await prisma.playersteams.findMany({
       where: {
-        player_team: { contains: "Golden State Warriors" },
+        player_team: { contains: TEAM_NAME },
       },
       select: {
         player_id: true,

@@ -118,39 +118,32 @@ export default function Home() {
         }
 
         // Fetch advanced stats
-        const advancedStatsResponse = await fetch("/api/advanced-stats", {
-          cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache",
-          },
-        })
+        const advancedStatsResponse = await fetch("/api/simple-stats")
         const advancedStatsData = await advancedStatsResponse.json()
-        if (advancedStatsData.averages) {
-          const formattedStats: AdvancedStat[] = [
-            { name: "Player Efficiency Rating (PER)", value: advancedStatsData.averages.PER.toFixed(1), id: "per" },
-            { name: "Plus-Minus (+/-)", value: advancedStatsData.averages.PLUS_MINUS.toFixed(1), id: "plus_minus" },
+        if (advancedStatsData.advancedStats) {
+          const formattedAdvancedStats: AdvancedStat[] = [
+            { name: "Offensive Rating", value: advancedStatsData.advancedStats.OfRtg.toFixed(1), id: "ofrtg" },
+            { name: "Defensive Rating", value: advancedStatsData.advancedStats.DfRtg.toFixed(1), id: "dfrtg" },
+            { name: "Net Rating", value: advancedStatsData.advancedStats.netRtg.toFixed(1), id: "netrtg" },
+            { name: "Pace", value: advancedStatsData.advancedStats.pace.toFixed(1), id: "pace" },
+            { name: "Effective FG%", value: `${(advancedStatsData.advancedStats.eFG * 100).toFixed(1)}%`, id: "efg" },
+            { name: "True Shooting%", value: `${(advancedStatsData.advancedStats.TS * 100).toFixed(1)}%`, id: "ts" },
+            { name: "Turnover%", value: `${advancedStatsData.advancedStats.TOVpercent.toFixed(1)}%`, id: "tovpct" },
             {
-              name: "Usage Rate (USG%)",
-              value: `${advancedStatsData.averages.USG_PCT.toFixed(1)}%`,
-              id: "usg_percentage",
-            },
-            {
-              name: "True Shooting % (TS%)",
-              value: `${advancedStatsData.averages.TS_PCT.toFixed(1)}%`,
-              id: "ts_percentage",
-            },
-            {
-              name: "Assist to Turnover Ratio (AST/TO)",
-              value: advancedStatsData.averages.AST_TO_RATIO.toFixed(2),
+              name: "Assist/TO Ratio",
+              value: advancedStatsData.advancedStats.assistToTOV.toFixed(2),
               id: "ast_to_ratio",
             },
-            { name: "Win Shares (WS)", value: advancedStatsData.averages.WIN_SHARES.toFixed(1), id: "win_shares" },
-            { name: "Offensive Rating (OffRtg)", value: advancedStatsData.averages.OFF_RTG.toFixed(1), id: "off_rtg" },
-            { name: "Defensive Rating (DefRtg)", value: advancedStatsData.averages.DEF_RTG.toFixed(1), id: "def_rtg" },
-            { name: "Net Rating (NetRtg)", value: advancedStatsData.averages.NET_RTG.toFixed(1), id: "net_rtg" },
+            { name: "Free Throw Rate", value: advancedStatsData.advancedStats.freeThrowRate.toFixed(1), id: "ft_rate" },
+            {
+              name: "Possessions",
+              value: Math.round(advancedStatsData.advancedStats.possessions).toString(),
+              id: "possessions",
+            },
+            { name: "Effective FGA", value: advancedStatsData.advancedStats.EFGA.toFixed(1), id: "efga" },
           ]
-          setAdvancedStats(formattedStats)
-          setIsAdvancedStatsProvisional(advancedStatsData.provisional || false)
+          setAdvancedStats(formattedAdvancedStats)
+          setIsAdvancedStatsProvisional(false)
         }
       } catch (error) {
         console.error("Error fetching data:", error)

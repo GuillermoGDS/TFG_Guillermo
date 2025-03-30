@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { ChevronLeft } from "lucide-react"
-import { useParams } from "next/navigation"
 
-// Define interfaces for our data types
+// Tipos para los datos del juego
 interface GameInfo {
   id: string
   date: string
@@ -25,7 +24,7 @@ interface GameInfo {
   referees: string
 }
 
-interface Stat {
+interface StatItem {
   id: number
   name: string
   home: string
@@ -36,8 +35,8 @@ interface PlayerStat {
   id: number
   name: string
   team: string
-  number?: string
-  position?: string
+  number: string
+  position: string
   minutes: number
   points: number
   rebounds: number
@@ -58,80 +57,97 @@ interface PlayerStat {
   plusMinus: string
 }
 
-export default function GameDetails() {
-  const { id } = useParams()
-  const [gameInfo, setGameInfo] = useState<GameInfo | null>(null)
-  const [simpleStats, setSimpleStats] = useState<Stat[]>([])
-  const [advancedStats, setAdvancedStats] = useState<Stat[]>([])
-  const [playerStats, setPlayerStats] = useState<PlayerStat[]>([])
+interface GameData {
+  gameInfo: GameInfo
+  simpleStats: StatItem[]
+  advancedStats: StatItem[]
+  playerStats: PlayerStat[]
+}
+
+export default function GameDetails({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+  // Unwrap params using React.use() if it's a Promise
+  const unwrappedParams = params instanceof Promise ? React.use(params) : params
+  const gameId = unwrappedParams.id
+
+  const [gameData, setGameData] = useState<GameData | null>(null)
   const [activeTeam, setActiveTeam] = useState<string>("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchGameData() {
+    const fetchGameData = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/game/${id}`)
+        const res = await fetch(`/api/game/${gameId}`)
 
-        if (!response.ok) {
-          throw new Error(`Error fetching game data: ${response.status}`)
+        if (!res.ok) {
+          throw new Error(`Failed to fetch game data: ${res.status}`)
         }
 
-        const data = await response.json()
+        const data = await res.json()
+        setGameData(data)
 
-        setGameInfo(data.gameInfo)
-        setSimpleStats(data.simpleStats)
-        setAdvancedStats(data.advancedStats)
-        setPlayerStats(data.playerStats)
-
-        // Set the active team to the home team by default
+        // Establecer el equipo local como activo por defecto
         if (data.gameInfo && data.gameInfo.homeTeam) {
           setActiveTeam(data.gameInfo.homeTeam.name)
         }
 
         setError(null)
       } catch (err) {
-        console.error("Failed to fetch game data:", err)
+        console.error("Error fetching game data:", err)
         setError("Failed to load game data. Please try again later.")
       } finally {
         setLoading(false)
       }
     }
 
-    if (id) {
+    if (gameId) {
       fetchGameData()
     }
-  }, [id])
+  }, [gameId])
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
-        <div className="flex flex-col items-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <h1 className="text-2xl font-semibold">Loading game data...</h1>
+      <div className="flex flex-col items-center min-h-screen text-white bg-[#0a0a2a]">
+        <div className="w-full bg-gradient-to-r from-blue-800 to-purple-900 py-8 mb-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-center">Game Details</h1>
+            <p className="text-center mt-2 text-blue-100">Loading...</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center flex-grow">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
         </div>
       </div>
     )
   }
 
-  if (error || !gameInfo) {
+  if (error || !gameData) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
-        <div className="bg-gray-800 rounded-xl p-10 shadow-lg max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold mb-6">Game Not Found</h1>
-          <p className="mb-6 text-gray-400">{error || "This game could not be found."}</p>
-          <Link
-            href="/games"
-            className="bg-gradient-to-r from-blue-600 to-purple-700 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center w-full"
-          >
-            <ChevronLeft className="mr-2" size={20} />
-            Back to Games
-          </Link>
+      <div className="flex flex-col items-center min-h-screen text-white bg-[#0a0a2a]">
+        <div className="w-full bg-gradient-to-r from-blue-800 to-purple-900 py-8 mb-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-center">Game Details</h1>
+            <p className="text-center mt-2 text-blue-100">Error</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center flex-grow">
+          <div className="bg-gray-800 rounded-xl p-10 shadow-lg max-w-md w-full text-center">
+            <h2 className="text-2xl font-bold mb-4">{error || "Game not found or data unavailable"}</h2>
+            <Link
+              href="/"
+              className="inline-flex items-center bg-gradient-to-r from-blue-600 to-purple-700 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity"
+            >
+              <ChevronLeft className="mr-2" size={20} />
+              Back to Games
+            </Link>
+          </div>
         </div>
       </div>
     )
   }
+
+  const { gameInfo, simpleStats, advancedStats, playerStats } = gameData
 
   return (
     <div className="flex flex-col items-center min-h-screen text-white bg-[#0a0a2a]">
@@ -168,7 +184,7 @@ export default function GameDetails() {
       <div className="w-full max-w-7xl mx-auto px-4 pb-16">
         {/* Back button */}
         <Link
-          href="/games"
+          href="/"
           className="inline-flex items-center bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors mb-8"
         >
           <ChevronLeft className="mr-2" size={20} />
@@ -182,7 +198,7 @@ export default function GameDetails() {
               <div className="text-center mr-8">
                 <div className="bg-blue-600 rounded-full p-3 mb-2 relative h-24 w-24 flex items-center justify-center">
                   <Image
-                    src={gameInfo.homeTeam.logo || "/placeholder.svg?height=80&width=80"}
+                    src={gameInfo.homeTeam.logo || "/placeholder.svg"}
                     alt={gameInfo.homeTeam.name}
                     width={80}
                     height={80}
@@ -204,7 +220,7 @@ export default function GameDetails() {
               <div className="text-center ml-8">
                 <div className="bg-purple-600 rounded-full p-3 mb-2 relative h-24 w-24 flex items-center justify-center">
                   <Image
-                    src={gameInfo.awayTeam.logo || "/placeholder.svg?height=80&width=80"}
+                    src={gameInfo.awayTeam.logo || "/placeholder.svg"}
                     alt={gameInfo.awayTeam.name}
                     width={80}
                     height={80}
@@ -258,7 +274,6 @@ export default function GameDetails() {
           <div className="flex items-center mb-6">
             <h2 className="text-3xl font-bold">Advanced Stats</h2>
             <div className="ml-4 h-1 flex-grow bg-purple-600 rounded-full"></div>
-            <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Datos provisionales</div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

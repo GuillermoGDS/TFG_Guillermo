@@ -77,10 +77,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ message: "No stats found for this player" })
     }
 
-    // Calcular promedios
+    // Calcular totales
     const totalGames = stats.length
     const totalStats: Record<string, number> = {}
-
     stats.forEach((game) => {
       ;(Object.keys(game) as Array<keyof typeof game>).forEach((key) => {
         if (typeof game[key] === "number") {
@@ -94,6 +93,23 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     Object.keys(totalStats).forEach((key) => {
       playerAverages[key] = totalStats[key] / totalGames
     })
+
+    // Calcular estadísticas avanzadas
+    const possessions = totalStats.FGA + 0.44 * totalStats.FTA + totalStats.TOV
+    const ptsGenerated = totalStats.PTS + totalStats.AST * (2 * (1 - totalStats.FG3_PCT) + 3 * totalStats.FG3_PCT)
+    const OffRtg = (possessions / ptsGenerated) * 100 || 0
+    const TS = totalStats.PTS / (2 * (totalStats.FGA + 0.44 * totalStats.FTA)) || 0
+    const eFG = (totalStats.FGM + 0.5 * totalStats.FG3M) / totalStats.FGA || 0
+    const ASTtoTO = totalStats.AST / totalStats.TOV || 0
+    const TOVpercent = (totalStats.TOV / possessions) * 100 || 0
+    const USG = ((totalStats.FGA + 0.44 * totalStats.FTA + totalStats.TOV) * 100) / (totalStats.MIN * 100) || 0
+
+    playerAverages.OffRtg = OffRtg
+    playerAverages.TS = TS
+    playerAverages.eFG = eFG
+    playerAverages.ASTtoTO = ASTtoTO
+    playerAverages.TOVpercent = TOVpercent
+    playerAverages.USG = USG
 
     // Obtener la imagen del jugador en función de los formatos disponibles
     const playerImage = getPlayerImage(playerId)
