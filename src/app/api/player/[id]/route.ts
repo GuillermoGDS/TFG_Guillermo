@@ -1,25 +1,10 @@
 import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
-import fs from "fs"
-import path from "path"
+import { playersData } from "@/app/players-data"
 
-const prisma = new PrismaClient()
-
-// Función para verificar la existencia de la imagen en diferentes formatos
-const getPlayerImage = (playerId: number): string | null => {
-  const imageFormats = ["png", "webp", "avif", "jpg"]
-  const publicDir = path.join(process.cwd(), "public", "images", "players")
-
-  for (const format of imageFormats) {
-    const imagePath = path.join(publicDir, `${playerId}.${format}`)
-    if (fs.existsSync(imagePath)) {
-      return `/images/players/${playerId}.${format}`
-    }
-  }
-
-  // Si no existe ninguna imagen, retornar un placeholder
-  return "/images/players/placeholder.png"
-}
+// Usar una única instancia de Prisma para evitar memory leaks en desarrollo
+const prisma = global.prisma || new PrismaClient()
+if (process.env.NODE_ENV === "development") global.prisma = prisma
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -111,8 +96,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     playerAverages.TOVpercent = TOVpercent
     playerAverages.USG = USG
 
-    // Obtener la imagen del jugador en función de los formatos disponibles
-    const playerImage = getPlayerImage(playerId)
+    // Obtener la imagen del jugador desde el archivo players-data.ts
+    const playerIdStr = playerId.toString()
+    const playerImage = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
 
     return NextResponse.json({
       playerId,
@@ -125,3 +111,4 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
+

@@ -125,10 +125,11 @@ export default function PlayerPage() {
           <div className="flex flex-col md:flex-row items-center">
             <div className="relative w-48 h-48 md:w-64 md:h-64 mb-6 md:mb-0 md:mr-10">
               <Image
-                src={playerData.image || "/default-player.jpg"}
-                alt={playerData.name || "Player Image"}
+                src={playerData.image || "/placeholder.svg?height=400&width=300"}
+                alt={`${playerData.name} - Player Profile`}
                 fill
                 className="rounded-full object-cover border-4 border-white shadow-lg"
+                unoptimized={playerData.image?.includes(".webp") || playerData.image?.includes(".avif")}
               />
             </div>
             <div className="text-center md:text-left">

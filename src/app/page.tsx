@@ -197,7 +197,7 @@ export default function Home() {
       <nav className="w-full bg-gray-800 p-4 mb-8 sticky top-0 z-10 shadow-lg">
         <div className="max-w-7xl mx-auto">
           <ul className="flex justify-between items-center bg-gray-700 rounded-lg p-1">
-            {["Team", "Games", "Plans"].map((item) => (
+            {["Team", "Games", "Analytics"].map((item) => (
               <li key={item} className="flex-1">
                 <button
                   onClick={() => setSection(item)}
@@ -305,7 +305,7 @@ export default function Home() {
           <>
             <div className="mb-16">
               <div className="flex items-center mb-6">
-                <h2 className="text-3xl font-bold">Upcoming Games</h2>
+                <h2 className="text-3xl font-bold">Played Games</h2>
                 <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
               </div>
 
@@ -350,14 +350,43 @@ export default function Home() {
           </>
         )}
 
-        {section === "Plans" && (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl p-10 shadow-lg max-w-md w-full text-center">
-              <h2 className="text-3xl font-bold mb-4">Coming Soon</h2>
-              <p className="text-lg mb-6">Esta sección estará lista dentro de poco</p>
-              <div className="inline-block bg-white bg-opacity-20 px-6 py-3 rounded-lg">Stay tuned!</div>
+        {section === "Analytics" && (
+          <>
+            <div className="mb-16">
+              <div className="flex items-center mb-6">
+                <h2 className="text-3xl font-bold">Analytics Ideas</h2>
+                <div className="ml-4 h-1 flex-grow bg-purple-600 rounded-full"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Link href="/analytics/idea-1" className="block">
+                  <div className="bg-gradient-to-r from-blue-700 to-purple-800 rounded-xl p-8 shadow-lg cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold mb-2">Player Rankings</h3>
+                      <p className="text-blue-200">Comparativa estadística de jugadores</p>
+                    </div>
+                    <div className="bg-white bg-opacity-20 rounded-full p-3">
+                      <ChevronRight className="text-white h-6 w-6" />
+                    </div>
+                  </div>
+                </Link>
+
+                {[2, 3, 4, 5].map((idea) => (
+                  <Link href={`/analytics/idea-${idea}`} key={`idea-${idea}`} className="block">
+                    <div className="bg-gradient-to-r from-blue-700 to-purple-800 rounded-xl p-8 shadow-lg cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-between">
+                      <div>
+                        <h3 className="text-2xl font-bold mb-2">Idea {idea}</h3>
+                        <p className="text-blue-200">Análisis avanzado de datos</p>
+                      </div>
+                      <div className="bg-white bg-opacity-20 rounded-full p-3">
+                        <ChevronRight className="text-white h-6 w-6" />
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
