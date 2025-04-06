@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
 import Image from "next/image"
-import { ChevronLeft } from "lucide-react"
+import { ChevronLeft, BarChart3, TrendingUp, Award, Star, Activity, Shield, Info, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 export default function PlayerPage() {
@@ -14,6 +14,7 @@ export default function PlayerPage() {
   const [advancedStats, setAdvancedStats] = useState<{ name: string; value: string }[]>([])
   const [isAdvancedStatsProvisional, setIsAdvancedStatsProvisional] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<"simple" | "advanced">("simple")
 
   useEffect(() => {
     if (!id) return
@@ -60,12 +61,30 @@ export default function PlayerPage() {
     fetchPlayerData()
   }, [id])
 
+  // Función para determinar si un valor estadístico es destacable
+  const isHighlightedStat = (name: string, value: string | number) => {
+    const numValue = typeof value === "string" ? Number.parseFloat(value) : value
+
+    if (name.includes("Points") && numValue > 15) return true
+    if (name.includes("Assists") && numValue > 5) return true
+    if (name.includes("Rebounds") && numValue > 7) return true
+    if (name.includes("Steals") && numValue > 1.5) return true
+    if (name.includes("Blocks") && numValue > 1) return true
+    if (name.includes("FG%") && numValue > 45) return true
+    if (name.includes("3P%") && numValue > 35) return true
+    if (name.includes("FT%") && numValue > 80) return true
+    if (name.includes("Rating") && numValue > 110) return true
+    if (name.includes("Shooting") && numValue > 55) return true
+
+    return false
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <h1 className="text-2xl font-semibold">Loading...</h1>
+          <h1 className="text-2xl font-semibold">Loading player profile...</h1>
         </div>
       </div>
     )
@@ -109,100 +128,479 @@ export default function PlayerPage() {
     { name: "Games Played", value: Object.keys(stats).length.toString() },
   ]
 
+  // Agrupar estadísticas simples por categorías
+  const keyStats = allSimpleStats.slice(0, 6) // Primeras 6 estadísticas (puntos, asistencias, rebotes, etc.)
+  const shootingStats = allSimpleStats.slice(6, 9) // Porcentajes de tiro
+  const detailedStats = allSimpleStats.slice(9) // Resto de estadísticas
+
+  // Determinar las estadísticas destacadas para el jugador
+  const getTopStats = () => {
+    const sortedStats = [...allSimpleStats].sort((a, b) => {
+      const aValue = typeof a.value === "string" ? Number.parseFloat(a.value) : a.value
+      const bValue = typeof b.value === "string" ? Number.parseFloat(b.value) : b.value
+
+      // Normalizar los valores para comparación
+      const getNormalizedValue = (stat: { name: string; value: string }) => {
+        const val = Number.parseFloat(stat.value)
+        if (stat.name.includes("Points")) return val / 30
+        if (stat.name.includes("Assists")) return val / 10
+        if (stat.name.includes("Rebounds")) return val / 15
+        if (stat.name.includes("Steals")) return val / 3
+        if (stat.name.includes("Blocks")) return val / 3
+        if (stat.name.includes("FG%")) return val / 100
+        if (stat.name.includes("3P%")) return val / 100
+        if (stat.name.includes("FT%")) return val / 100
+        return val
+      }
+
+      return getNormalizedValue(b) - getNormalizedValue(a)
+    })
+
+    return sortedStats.slice(0, 3)
+  }
+
+  const topStats = getTopStats()
+
   return (
     <div className="min-h-screen text-white bg-[#0a0a2a]">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <Link
-          href="/"
-          className="inline-flex items-center mb-8 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          <ChevronLeft className="mr-2" size={20} />
-          Back to home
-        </Link>
-
-        {/* Player header with gradient background */}
-        <div className="bg-gradient-to-br from-blue-600 to-purple-700 rounded-xl p-8 shadow-lg mb-10">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="relative w-48 h-48 md:w-64 md:h-64 mb-6 md:mb-0 md:mr-10">
-              <Image
-                src={playerData.image || "/placeholder.svg?height=400&width=300"}
-                alt={`${playerData.name} - Player Profile`}
-                fill
-                className="rounded-full object-cover border-4 border-white shadow-lg"
-                unoptimized={playerData.image?.includes(".webp") || playerData.image?.includes(".avif")}
-              />
+      {/* Header Banner */}
+      <div className="w-full bg-gradient-to-r from-blue-800 to-purple-900 py-8 mb-6">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center">
+            <Link href="/" className="mr-4">
+              <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
+            </Link>
+            <div>
+              <h1 className="text-4xl md:text-5xl font-bold">Player Profile</h1>
+              <p className="text-blue-100 mt-2">Detailed statistics and analysis</p>
             </div>
-            <div className="text-center md:text-left">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">{playerData.name}</h1>
-              <div className="inline-block bg-black bg-opacity-30 px-4 py-2 rounded-lg">
-                <span className="text-xl">Player Profile</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Player Name Banner */}
-        <div className="bg-gray-800 rounded-xl p-6 mb-10 shadow-lg">
-          <h2 className="text-3xl md:text-4xl font-bold text-center">{playerData.name}'s Statistics</h2>
-        </div>
-
-        {/* Simple Stats Section */}
-        <div className="mb-12">
-          <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">Simple Stats</h2>
-            <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {allSimpleStats.map((stat, index) => (
-              <div
-                key={index}
-                className="bg-gray-800 rounded-xl p-6 text-center shadow-lg cursor-pointer transform transition-all hover:scale-105 hover:bg-gray-700 flex flex-col justify-center min-h-[180px]"
-              >
-                <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
-                <p className="text-3xl font-bold">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Advanced Stats Section */}
-        <div className="mb-12">
-          <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">Advanced Stats</h2>
-            <div className="ml-4 h-1 flex-grow bg-purple-600 rounded-full"></div>
-            {isAdvancedStatsProvisional && (
-              <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Datos provisionales</div>
-            )}
-          </div>
-
-          <div className="bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-8">
-              {advancedStats.map((stat, index) => (
-                <div
-                  key={index}
-                  className="bg-gradient-to-br from-blue-800 to-purple-900 rounded-lg p-4 hover:opacity-90 transition-opacity"
-                >
-                  <p className="text-gray-300 mb-2">{stat.name}</p>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Performance Chart Placeholder */}
-        <div className="mb-12">
-          <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">Performance Chart</h2>
-            <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
-          </div>
-
-          <div className="bg-gray-800 rounded-xl p-8 shadow-lg flex justify-center items-center h-64">
-            <p className="text-gray-400 text-lg">Performance visualization coming soon</p>
           </div>
         </div>
       </div>
+
+      <div className="max-w-7xl mx-auto px-4 pb-16">
+        {/* Player Profile Card */}
+        <div className="bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl overflow-hidden shadow-xl mb-10">
+          <div className="md:flex">
+            <div className="md:w-1/3 relative">
+              <div className="h-80 md:h-full relative">
+                <Image
+                  src={playerData.image || "/placeholder.svg?height=400&width=300"}
+                  alt={`${playerData.name} - Player Profile`}
+                  fill
+                  className="object-cover"
+                  unoptimized={playerData.image?.includes(".webp") || playerData.image?.includes(".avif")}
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent md:bg-gradient-to-r"></div>
+              </div>
+            </div>
+            <div className="md:w-2/3 p-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center mb-2">
+                  <div className="bg-blue-600/30 px-3 py-1 rounded-full text-sm text-blue-300 flex items-center">
+                    <Shield className="h-4 w-4 mr-1" />
+                    Player Profile
+                  </div>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold mb-6">{playerData.name}</h1>
+
+                {/* Top Stats Badges */}
+                <div className="flex flex-wrap gap-3 mb-6">
+                  {topStats.map((stat, index) => (
+                    <div key={index} className="bg-blue-900/50 px-4 py-2 rounded-lg flex items-center">
+                      <Star className="h-5 w-5 text-yellow-400 mr-2" />
+                      <div>
+                        <p className="text-sm text-blue-300">{stat.name}</p>
+                        <p className="text-xl font-bold">{stat.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key Stats Summary */}
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-3 flex items-center">
+                  <Activity className="h-5 w-5 mr-2 text-blue-400" />
+                  Key Performance Metrics
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-gray-900/50 p-3 rounded-lg text-center">
+                    <p className="text-sm text-gray-400">Points</p>
+                    <p className="text-2xl font-bold">{stats.PTS?.toFixed(1) || "0.0"}</p>
+                  </div>
+                  <div className="bg-gray-900/50 p-3 rounded-lg text-center">
+                    <p className="text-sm text-gray-400">Rebounds</p>
+                    <p className="text-2xl font-bold">{stats.REB?.toFixed(1) || "0.0"}</p>
+                  </div>
+                  <div className="bg-gray-900/50 p-3 rounded-lg text-center">
+                    <p className="text-sm text-gray-400">Assists</p>
+                    <p className="text-2xl font-bold">{stats.AST?.toFixed(1) || "0.0"}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Tabs */}
+        <div className="mb-8">
+          <div className="flex bg-gray-800 rounded-lg p-1 max-w-md mx-auto">
+            <button
+              onClick={() => setActiveTab("simple")}
+              className={`flex-1 py-3 text-center rounded-md transition-all duration-300 ${
+                activeTab === "simple"
+                  ? "bg-gradient-to-r from-green-600 to-blue-700 text-white shadow-lg"
+                  : "text-gray-300 hover:bg-gray-700"
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 mr-2" />
+                <span>Simple Stats</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab("advanced")}
+              className={`flex-1 py-3 text-center rounded-md transition-all duration-300 ${
+                activeTab === "advanced"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-700 text-white shadow-lg"
+                  : "text-gray-300 hover:bg-gray-700"
+              }`}
+            >
+              <div className="flex items-center justify-center">
+                <TrendingUp className="h-5 w-5 mr-2" />
+                <span>Advanced Stats</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {activeTab === "simple" ? (
+          <>
+            {/* Key Stats Section */}
+            <div className="mb-10">
+              <div className="flex items-center mb-6">
+                <h2 className="text-3xl font-bold flex items-center">
+                  <Award className="mr-3 h-8 w-8 text-yellow-500" />
+                  Key Statistics
+                </h2>
+                <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {keyStats.map((stat, index) => {
+                  const isHighlighted = isHighlightedStat(stat.name, stat.value)
+                  return (
+                    <div
+                      key={index}
+                      className={`${
+                        isHighlighted ? "bg-gradient-to-br from-yellow-800 to-yellow-900" : "bg-gray-800"
+                      } rounded-xl p-6 shadow-lg transition-all hover:shadow-xl relative overflow-hidden`}
+                    >
+                      {isHighlighted && (
+                        <div className="absolute top-2 right-2">
+                          <Star className="h-5 w-5 text-yellow-400" />
+                        </div>
+                      )}
+                      <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
+                      <p className="text-4xl font-bold">{stat.value}</p>
+
+                      {/* Barra de progreso visual para algunas estadísticas */}
+                      {(stat.name.includes("Points") ||
+                        stat.name.includes("Rebounds") ||
+                        stat.name.includes("Assists")) && (
+                        <div className="w-full bg-gray-700 h-2 rounded-full mt-4 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-yellow-500"
+                            style={{
+                              width: `${Math.min(
+                                stat.name.includes("Points")
+                                  ? Number.parseFloat(stat.value) * 3
+                                  : stat.name.includes("Rebounds")
+                                    ? Number.parseFloat(stat.value) * 5
+                                    : Number.parseFloat(stat.value) * 8,
+                                100,
+                              )}%`,
+                            }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Shooting Stats Section */}
+            <div className="mb-10">
+              <div className="flex items-center mb-6">
+                <h2 className="text-3xl font-bold flex items-center">
+                  <BarChart3 className="mr-3 h-8 w-8 text-green-500" />
+                  Shooting Efficiency
+                </h2>
+                <div className="ml-4 h-1 flex-grow bg-green-600 rounded-full"></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {shootingStats.map((stat, index) => {
+                  const percentage = Number.parseFloat(stat.value)
+                  const isHighlighted = isHighlightedStat(stat.name, percentage)
+
+                  return (
+                    <div
+                      key={index}
+                      className={`${
+                        isHighlighted ? "bg-gradient-to-br from-green-800 to-blue-900" : "bg-gray-800"
+                      } rounded-xl p-6 shadow-lg transition-all hover:shadow-xl relative`}
+                    >
+                      {isHighlighted && (
+                        <div className="absolute top-2 right-2">
+                          <Star className="h-5 w-5 text-green-400" />
+                        </div>
+                      )}
+                      <p className="text-lg text-gray-400 mb-3">{stat.name}</p>
+                      <p className="text-4xl font-bold">{stat.value}</p>
+
+                      {/* Circular progress for percentages */}
+                      <div className="mt-4 relative h-4 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full"
+                          style={{ width: `${Math.min(percentage, 100)}%` }}
+                        ></div>
+                      </div>
+                      <div className="mt-1 text-xs text-right text-gray-400">
+                        League average: {stat.name === "FG%" ? "45.0%" : stat.name === "3P%" ? "35.0%" : "75.0%"}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Detailed Stats Section */}
+            <div className="mb-10">
+              <div className="flex items-center mb-6">
+                <h2 className="text-3xl font-bold">Detailed Statistics</h2>
+                <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {detailedStats.map((stat, index) => (
+                  <div key={index} className="bg-gray-800 rounded-xl p-5 shadow-lg transition-all hover:bg-gray-700">
+                    <p className="text-sm text-gray-400 mb-2">{stat.name}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Advanced Stats Section */}
+            <div className="mb-10">
+              <div className="flex items-center mb-6">
+                <h2 className="text-3xl font-bold flex items-center">
+                  <TrendingUp className="mr-3 h-8 w-8 text-purple-500" />
+                  Advanced Analytics
+                </h2>
+                <div className="ml-4 h-1 flex-grow bg-purple-600 rounded-full"></div>
+                {isAdvancedStatsProvisional && (
+                  <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Provisional data</div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {advancedStats.map((stat, index) => {
+                  const isHighlighted = isHighlightedStat(stat.name, stat.value)
+                  return (
+                    <div
+                      key={index}
+                      className={`${
+                        isHighlighted
+                          ? "bg-gradient-to-br from-purple-800 to-indigo-900"
+                          : "bg-gradient-to-br from-gray-800 to-gray-700"
+                      } rounded-xl p-6 shadow-lg transition-all hover:opacity-90 relative`}
+                    >
+                      {isHighlighted && (
+                        <div className="absolute top-2 right-2">
+                          <Star className="h-5 w-5 text-purple-400" />
+                        </div>
+                      )}
+                      <div className="flex justify-between items-start">
+                        <p className="text-lg text-gray-300 mb-3">{stat.name}</p>
+                        <div className="relative group">
+                          <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                          <div className="absolute right-0 w-48 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                            {stat.name.includes("Offensive Rating") && "Points produced per 100 possessions"}
+                            {stat.name.includes("True Shooting") &&
+                              "Shooting percentage accounting for FG, 3PT, and FT"}
+                            {stat.name.includes("Effective Field Goal") &&
+                              "Field goal percentage adjusted for 3-pointers"}
+                            {stat.name.includes("Assist to Turnover") && "Ratio of assists to turnovers"}
+                            {stat.name.includes("Turnover Percentage") && "Turnovers per 100 plays"}
+                            {stat.name.includes("Usage Rate") && "Percentage of team plays used by a player"}
+                            {stat.name.includes("Plus-Minus") && "Team's point differential when player is on court"}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-3xl font-bold">{stat.value}</p>
+
+                      {/* Progress bar for percentage stats */}
+                      {stat.name.includes("%") && (
+                        <div className="w-full bg-gray-700 h-2 rounded-full mt-4 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-purple-500"
+                            style={{ width: `${Math.min(Number.parseFloat(stat.value), 100)}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Advanced Analysis Insights */}
+            <div className="mb-10">
+              <div className="flex items-center mb-6">
+                <h2 className="text-3xl font-bold">Performance Insights</h2>
+                <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 rounded-xl p-6 shadow-lg">
+                <h3 className="text-xl font-semibold mb-4">Player Analysis</h3>
+                <p className="text-gray-300 mb-4">
+                  Based on the advanced metrics, {playerData.name} shows the following performance characteristics:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <h4 className="text-lg font-medium mb-2 flex items-center">
+                      <Award className="h-5 w-5 mr-2 text-yellow-500" />
+                      Strengths
+                    </h4>
+                    <ul className="space-y-2 text-gray-300">
+                      {Number.parseFloat(stats.PTS?.toFixed(1) || "0") > 15 && (
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">•</span>
+                          Strong scoring ability with {stats.PTS?.toFixed(1)} points per game
+                        </li>
+                      )}
+                      {Number.parseFloat(stats.AST?.toFixed(1) || "0") > 5 && (
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">•</span>
+                          Excellent playmaking with {stats.AST?.toFixed(1)} assists per game
+                        </li>
+                      )}
+                      {Number.parseFloat(stats.REB?.toFixed(1) || "0") > 7 && (
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">•</span>
+                          Strong rebounding presence with {stats.REB?.toFixed(1)} rebounds per game
+                        </li>
+                      )}
+                      {Number.parseFloat(stats.FG_PCT?.toFixed(1) || "0") > 45 && (
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">•</span>
+                          Efficient shooter with {stats.FG_PCT?.toFixed(1)}% field goal percentage
+                        </li>
+                      )}
+                      {/* Fallback if no specific strengths are identified */}
+                      {!(
+                        Number.parseFloat(stats.PTS?.toFixed(1) || "0") > 15 ||
+                        Number.parseFloat(stats.AST?.toFixed(1) || "0") > 5 ||
+                        Number.parseFloat(stats.REB?.toFixed(1) || "0") > 7 ||
+                        Number.parseFloat(stats.FG_PCT?.toFixed(1) || "0") > 45
+                      ) && (
+                        <li className="flex items-start">
+                          <span className="text-green-500 mr-2">•</span>
+                          Balanced contributor across multiple statistical categories
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                  <div className="bg-gray-800/50 rounded-lg p-4">
+                    <h4 className="text-lg font-medium mb-2 flex items-center">
+                      <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
+                      Development Areas
+                    </h4>
+                    <ul className="space-y-2 text-gray-300">
+                      {Number.parseFloat(stats.TOV?.toFixed(1) || "0") > 3 && (
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          Ball security could improve ({stats.TOV?.toFixed(1)} turnovers per game)
+                        </li>
+                      )}
+                      {Number.parseFloat(stats.FG3_PCT?.toFixed(1) || "0") < 33 && (
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          Three-point shooting efficiency ({stats.FG3_PCT?.toFixed(1)}%)
+                        </li>
+                      )}
+                      {Number.parseFloat(stats.FT_PCT?.toFixed(1) || "0") < 75 && (
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          Free throw consistency ({stats.FT_PCT?.toFixed(1)}%)
+                        </li>
+                      )}
+                      {/* Fallback if no specific development areas are identified */}
+                      {!(
+                        Number.parseFloat(stats.TOV?.toFixed(1) || "0") > 3 ||
+                        Number.parseFloat(stats.FG3_PCT?.toFixed(1) || "0") < 33 ||
+                        Number.parseFloat(stats.FT_PCT?.toFixed(1) || "0") < 75
+                      ) && (
+                        <li className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          Continued development as an all-around player
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Performance Chart Section */}
+        <div className="mb-10">
+          <div className="flex items-center mb-6">
+            <h2 className="text-3xl font-bold">Performance Visualization</h2>
+            <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-8 shadow-lg">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-semibold">Coming Soon</h3>
+              <p className="text-gray-400 mt-2">
+                Interactive performance charts and visualizations will be available in a future update.
+              </p>
+            </div>
+
+            <div className="flex justify-center items-center h-48 bg-gray-900/50 rounded-lg">
+              <div className="text-center">
+                <Activity className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500">Performance data visualization</p>
+              </div>
+            </div>
+
+            <div className="mt-6 text-center">
+              <Link
+                href="/analytics/idea-3"
+                className="inline-flex items-center bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 px-5 py-3 rounded-lg transition-colors"
+              >
+                View Player Radar Analysis
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer className="w-full bg-gray-900 py-6 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
+          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
+        </div>
+      </footer>
     </div>
   )
 }
