@@ -20,6 +20,18 @@ import {
   Star,
   ArrowRight,
   Award,
+  LineChart,
+  Layers,
+  Target,
+  BarChart4,
+  PieChart,
+  Clipboard,
+  UserCircle,
+  Lightbulb,
+  Gauge,
+  Dumbbell,
+  Brain,
+  Sparkles,
 } from "lucide-react"
 
 // Definir la interfaz para los tipos de datos
@@ -134,6 +146,9 @@ export default function Home() {
   const [playerSearchTerm, setPlayerSearchTerm] = useState("")
   const [filterPosition, setFilterPosition] = useState("all")
   const [activeStatTab, setActiveStatTab] = useState<"simple" | "advanced">("simple")
+
+  // Nuevo estado para la sección de Analytics
+  const [analyticsView, setAnalyticsView] = useState<"all" | "player" | "team" | "game">("all")
 
   useEffect(() => {
     async function fetchData() {
@@ -749,153 +764,415 @@ export default function Home() {
         {section === "Analytics" && (
           <>
             <div className="mb-16">
-              <div className="flex items-center mb-6">
-                <h2 className="text-3xl font-bold">Analytics Dashboard</h2>
-                <div className="ml-4 h-1 flex-grow bg-purple-600 rounded-full"></div>
-              </div>
+              {/* Header mejorado con enfoque en entrenadores y jugadores */}
+              <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 rounded-2xl overflow-hidden shadow-xl mb-10">
+                <div className="relative">
+                  {/* Fondo con patrón de cancha de baloncesto */}
+                  <div className="absolute inset-0 opacity-10 bg-[url('/hardwood-court-lines.png')] bg-cover"></div>
 
-              {/* Featured Analysis */}
-              <div className="mb-10">
-                <h3 className="text-xl font-semibold mb-4 flex items-center">
-                  <span className="bg-yellow-500 p-1 rounded mr-2">
-                    <TrendingUp className="h-5 w-5 text-gray-900" />
-                  </span>
-                  Featured Analysis
-                </h3>
-                <div className="bg-gradient-to-r from-indigo-800 to-purple-900 rounded-xl overflow-hidden shadow-xl">
-                  <div className="md:flex">
-                    <div className="md:w-2/3 p-8">
-                      <div className="inline-block bg-white/20 px-3 py-1 rounded-full text-sm mb-4">New</div>
-                      <h3 className="text-3xl font-bold mb-3">Player Radar Analysis</h3>
-                      <p className="text-blue-200 mb-6">
-                        Visualiza el impacto global de los jugadores mediante gráficos de radar interactivos y análisis
-                        de fortalezas y debilidades.
-                      </p>
-                      <Link
-                        href="/analytics/idea-3"
-                        className="inline-flex items-center bg-white/10 hover:bg-white/20 px-5 py-3 rounded-lg transition-colors"
-                      >
-                        Explorar análisis
-                        <ChevronRight className="ml-2 h-5 w-5" />
-                      </Link>
-                    </div>
-                    <div className="md:w-1/3 bg-gradient-to-br from-indigo-900 to-purple-800 flex items-center justify-center p-8">
-                      <div className="w-full h-48 relative flex items-center justify-center">
-                        <div className="absolute w-32 h-32 bg-indigo-500/20 rounded-full"></div>
-                        <div className="absolute w-24 h-24 bg-indigo-500/30 rounded-full"></div>
-                        <div className="absolute w-16 h-16 bg-indigo-500/40 rounded-full"></div>
-                        <Activity className="h-20 w-20 text-white/80" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Analysis Categories */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="bg-gradient-to-br from-blue-900 to-blue-800 rounded-xl p-6 shadow-lg">
-                  <div className="bg-blue-700/50 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                    <BarChart3 className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Comparativas</h3>
-                  <p className="text-blue-200 mb-4">Análisis comparativos entre jugadores y equipos</p>
-                  <div className="space-y-2">
-                    <Link href="/analytics/idea-1" className="flex items-center text-sm text-white/80 hover:text-white">
-                      <ChevronRight className="h-4 w-4 mr-1" />
-                      Player Rankings
-                    </Link>
-                    <Link href="/analytics/idea-2" className="flex items-center text-sm text-white/80 hover:text-white">
-                      <ChevronRight className="h-4 w-4 mr-1" />
-                      Win vs Loss Analysis
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-purple-900 to-purple-800 rounded-xl p-6 shadow-lg">
-                  <div className="bg-purple-700/50 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                    <Activity className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Rendimiento</h3>
-                  <p className="text-purple-200 mb-4">Análisis detallado del rendimiento individual</p>
-                  <div className="space-y-2">
-                    <Link href="/analytics/idea-3" className="flex items-center text-sm text-white/80 hover:text-white">
-                      <ChevronRight className="h-4 w-4 mr-1" />
-                      Player Radar Analysis
-                    </Link>
-                    <Link href="/analytics/idea-4" className="flex items-center text-sm text-white/80 hover:text-white">
-                      <ChevronRight className="h-4 w-4 mr-1" />
-                      Idea 4
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-br from-green-900 to-green-800 rounded-xl p-6 shadow-lg">
-                  <div className="bg-green-700/50 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                    <TrendingUp className="h-6 w-6" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2">Tendencias</h3>
-                  <p className="text-green-200 mb-4">Análisis de tendencias y predicciones</p>
-                  <div className="space-y-2">
-                    <Link href="/analytics/idea-5" className="flex items-center text-sm text-white/80 hover:text-white">
-                      <ChevronRight className="h-4 w-4 mr-1" />
-                      Idea 5
-                    </Link>
-                    <Link href="#" className="flex items-center text-sm text-white/50">
-                      <ChevronRight className="h-4 w-4 mr-1" />
-                      Próximamente
-                    </Link>
-                  </div>
-                </div>
-              </div>
-
-              {/* Recent Analysis */}
-              <div>
-                <h3 className="text-xl font-semibold mb-4 flex items-center">
-                  <span className="bg-blue-500 p-1 rounded mr-2">
-                    <Clock className="h-5 w-5 text-gray-900" />
-                  </span>
-                  Análisis Recientes
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {[
-                    {
-                      title: "Win vs Loss Analysis",
-                      description: "Comparativa de estadísticas en victorias y derrotas",
-                      icon: <BarChart3 className="h-5 w-5" />,
-                      color: "from-blue-600 to-blue-800",
-                      link: "/analytics/idea-2",
-                      date: "Hace 2 días",
-                    },
-                    {
-                      title: "Player Radar Analysis",
-                      description: "Visualización de impacto global de jugadores",
-                      icon: <Activity className="h-5 w-5" />,
-                      color: "from-indigo-600 to-indigo-800",
-                      link: "/analytics/idea-3",
-                      date: "Hace 1 día",
-                    },
-                    {
-                      title: "Player Rankings",
-                      description: "Comparativa estadística de jugadores",
-                      icon: <TrendingUp className="h-5 w-5" />,
-                      color: "from-purple-600 to-purple-800",
-                      link: "/analytics/idea-1",
-                      date: "Hace 3 días",
-                    },
-                  ].map((item, index) => (
-                    <Link href={item.link} key={index} className="block">
-                      <div
-                        className={`bg-gradient-to-br ${item.color} rounded-xl p-5 shadow-lg hover:shadow-xl transition-all transform hover:scale-102 h-full`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="bg-white/20 p-2 rounded-lg">{item.icon}</div>
-                          <span className="text-xs text-white/70">{item.date}</span>
+                  <div className="relative p-8 md:p-10">
+                    <div className="md:flex items-center justify-between">
+                      <div className="md:w-3/5">
+                        <div className="inline-flex items-center bg-white/10 px-3 py-1 rounded-full text-sm mb-4">
+                          <Sparkles className="h-4 w-4 mr-2 text-yellow-400" />
+                          Herramienta de Análisis Avanzado
                         </div>
-                        <h4 className="text-lg font-bold mt-3 mb-1">{item.title}</h4>
-                        <p className="text-sm text-blue-200">{item.description}</p>
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Optimiza el rendimiento del equipo</h2>
+                        <p className="text-lg text-blue-100 mb-6 max-w-2xl">
+                          Análisis detallados diseñados para ayudar a entrenadores y jugadores a tomar decisiones
+                          basadas en datos y mejorar el rendimiento individual y colectivo.
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 mb-6">
+                          <div className="inline-flex items-center bg-white/10 px-4 py-2 rounded-lg">
+                            <UserCircle className="h-5 w-5 mr-2 text-blue-400" />
+                            <span>Para jugadores</span>
+                          </div>
+                          <div className="inline-flex items-center bg-white/10 px-4 py-2 rounded-lg">
+                            <Clipboard className="h-5 w-5 mr-2 text-green-400" />
+                            <span>Para entrenadores</span>
+                          </div>
+                          <div className="inline-flex items-center bg-white/10 px-4 py-2 rounded-lg">
+                            <Brain className="h-5 w-5 mr-2 text-purple-400" />
+                            <span>Basado en datos</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="md:w-2/5 flex justify-center mt-6 md:mt-0">
+                        <div className="relative w-64 h-64">
+                          {/* Gráfico circular decorativo */}
+                          <div className="absolute inset-0 rounded-full border-4 border-blue-500/30 animate-pulse"></div>
+                          <div className="absolute inset-4 rounded-full border-4 border-indigo-500/40"></div>
+                          <div className="absolute inset-8 rounded-full border-4 border-purple-500/50"></div>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-white/10 p-6 rounded-full">
+                              <BarChart4 className="h-16 w-16 text-white" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Filtros de análisis */}
+                    <div className="mt-8 bg-white/5 rounded-xl p-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setAnalyticsView("all")}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            analyticsView === "all"
+                              ? "bg-blue-600 text-white"
+                              : "bg-white/10 hover:bg-white/20 text-white/80"
+                          }`}
+                        >
+                          Todos los análisis
+                        </button>
+                        <button
+                          onClick={() => setAnalyticsView("player")}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            analyticsView === "player"
+                              ? "bg-blue-600 text-white"
+                              : "bg-white/10 hover:bg-white/20 text-white/80"
+                          }`}
+                        >
+                          Análisis de jugadores
+                        </button>
+                        <button
+                          onClick={() => setAnalyticsView("team")}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            analyticsView === "team"
+                              ? "bg-blue-600 text-white"
+                              : "bg-white/10 hover:bg-white/20 text-white/80"
+                          }`}
+                        >
+                          Análisis de equipo
+                        </button>
+                        <button
+                          onClick={() => setAnalyticsView("game")}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            analyticsView === "game"
+                              ? "bg-blue-600 text-white"
+                              : "bg-white/10 hover:bg-white/20 text-white/80"
+                          }`}
+                        >
+                          Análisis de partidos
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección de herramientas de análisis */}
+              <div className="mb-10">
+                <div className="flex items-center mb-6">
+                  <h3 className="text-2xl font-bold flex items-center">
+                    <Layers className="mr-3 h-7 w-7 text-blue-500" />
+                    Herramientas de Análisis
+                  </h3>
+                  <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Player Rankings */}
+                  {(analyticsView === "all" || analyticsView === "player") && (
+                    <Link href="/analytics/idea-1" className="group">
+                      <div className="bg-white/5 backdrop-blur-sm border border-blue-900/30 rounded-xl p-6 shadow-lg h-full transition-all duration-300 hover:bg-blue-900/20 hover:border-blue-700/50 hover:shadow-blue-900/20 hover:shadow-lg">
+                        <div className="flex items-center mb-4">
+                          <div className="bg-gradient-to-br from-blue-600 to-blue-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
+                            <BarChart3 className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold">Player Rankings</h3>
+                        </div>
+                        <p className="text-gray-300 mb-4">
+                          Clasificación de jugadores según sus estadísticas clave y métricas de rendimiento.
+                        </p>
+                        <div className="mt-auto">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-sm text-blue-400 group-hover:text-blue-300">
+                              <span>Explorar</span>
+                              <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <div className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+                              Para entrenadores
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </Link>
-                  ))}
+                  )}
+
+                  {/* Win vs Loss Analysis */}
+                  {(analyticsView === "all" || analyticsView === "team" || analyticsView === "game") && (
+                    <Link href="/analytics/idea-2" className="group">
+                      <div className="bg-white/5 backdrop-blur-sm border border-indigo-900/30 rounded-xl p-6 shadow-lg h-full transition-all duration-300 hover:bg-indigo-900/20 hover:border-indigo-700/50 hover:shadow-indigo-900/20 hover:shadow-lg">
+                        <div className="flex items-center mb-4">
+                          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
+                            <ArrowUpDown className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold">Win vs Loss Analysis</h3>
+                        </div>
+                        <p className="text-gray-300 mb-4">
+                          Comparativa de estadísticas y rendimiento de jugadores en victorias frente a derrotas.
+                        </p>
+                        <div className="mt-auto">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-sm text-indigo-400 group-hover:text-indigo-300">
+                              <span>Explorar</span>
+                              <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <div className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+                              Para entrenadores
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+
+                  {/* Player Radar Analysis */}
+                  {(analyticsView === "all" || analyticsView === "player") && (
+                    <Link href="/analytics/idea-3" className="group">
+                      <div className="bg-white/5 backdrop-blur-sm border border-purple-900/30 rounded-xl p-6 shadow-lg h-full transition-all duration-300 hover:bg-purple-900/20 hover:border-purple-700/50 hover:shadow-purple-900/20 hover:shadow-lg">
+                        <div className="flex items-center mb-4">
+                          <div className="bg-gradient-to-br from-purple-600 to-purple-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
+                            <Activity className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold">Player Radar Analysis</h3>
+                        </div>
+                        <p className="text-gray-300 mb-4">
+                          Visualización multidimensional del impacto de los jugadores mediante gráficos de radar.
+                        </p>
+                        <div className="mt-auto">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-sm text-purple-400 group-hover:text-purple-300">
+                              <span>Explorar</span>
+                              <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <div className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+                              Para jugadores
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+
+                  {/* Player Evolution */}
+                  {(analyticsView === "all" || analyticsView === "player") && (
+                    <Link href="/analytics/idea-4" className="group">
+                      <div className="bg-white/5 backdrop-blur-sm border border-fuchsia-900/30 rounded-xl p-6 shadow-lg h-full transition-all duration-300 hover:bg-fuchsia-900/20 hover:border-fuchsia-700/50 hover:shadow-fuchsia-900/20 hover:shadow-lg">
+                        <div className="flex items-center mb-4">
+                          <div className="bg-gradient-to-br from-fuchsia-600 to-fuchsia-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
+                            <TrendingUp className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold">Player Evolution</h3>
+                        </div>
+                        <p className="text-gray-300 mb-4">
+                          Análisis de la evolución del rendimiento de los jugadores a lo largo del tiempo.
+                        </p>
+                        <div className="mt-auto">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-sm text-fuchsia-400 group-hover:text-fuchsia-300">
+                              <span>Explorar</span>
+                              <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <div className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+                              Para jugadores
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+
+                  {/* Player Consistency */}
+                  {(analyticsView === "all" || analyticsView === "player") && (
+                    <Link href="/analytics/idea-5" className="group">
+                      <div className="bg-white/5 backdrop-blur-sm border border-green-900/30 rounded-xl p-6 shadow-lg h-full transition-all duration-300 hover:bg-green-900/20 hover:border-green-700/50 hover:shadow-green-900/20 hover:shadow-lg">
+                        <div className="flex items-center mb-4">
+                          <div className="bg-gradient-to-br from-green-600 to-green-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
+                            <LineChart className="h-6 w-6 text-white" />
+                          </div>
+                          <h3 className="text-xl font-bold">Player Consistency</h3>
+                        </div>
+                        <p className="text-gray-300 mb-4">
+                          Evaluación de la consistencia del rendimiento de los jugadores partido a partido.
+                        </p>
+                        <div className="mt-auto">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-sm text-green-400 group-hover:text-green-300">
+                              <span>Explorar</span>
+                              <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                            <div className="text-xs text-gray-500 bg-gray-800/50 px-2 py-1 rounded-full">
+                              Para ambos
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+
+                  {/* Coming Soon */}
+                  <div className="bg-white/5 backdrop-blur-sm border border-gray-800 rounded-xl p-6 shadow-lg h-full opacity-80">
+                    <div className="flex items-center mb-4">
+                      <div className="bg-gradient-to-br from-gray-600 to-gray-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
+                        <Clock className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold">Próximamente</h3>
+                    </div>
+                    <p className="text-gray-400 mb-4">
+                      Nuevos análisis y visualizaciones en desarrollo. ¡Mantente atento a las actualizaciones!
+                    </p>
+                    <div className="inline-flex items-center bg-gray-800/50 px-3 py-1 rounded-full text-xs text-gray-400">
+                      En desarrollo
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección de beneficios para entrenadores y jugadores */}
+              <div className="mb-10">
+                <div className="flex items-center mb-6">
+                  <h3 className="text-2xl font-bold flex items-center">
+                    <Target className="mr-3 h-7 w-7 text-green-500" />
+                    Beneficios para el Equipo
+                  </h3>
+                  <div className="ml-4 h-1 flex-grow bg-green-600 rounded-full"></div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Para Entrenadores */}
+                  <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-xl p-6 shadow-lg border border-blue-800/30">
+                    <div className="flex items-center mb-4">
+                      <div className="bg-blue-700/30 p-3 rounded-lg mr-4">
+                        <Clipboard className="h-6 w-6 text-blue-400" />
+                      </div>
+                      <h4 className="text-xl font-semibold text-blue-300">Para Entrenadores</h4>
+                    </div>
+
+                    <ul className="space-y-3 text-gray-300">
+                      <li className="flex items-start">
+                        <div className="bg-blue-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <span>Identifica fortalezas y debilidades de cada jugador</span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <span>Optimiza las rotaciones basándote en datos de rendimiento</span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <span>Analiza patrones de éxito en victorias vs derrotas</span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-blue-400" />
+                        </div>
+                        <span>Desarrolla estrategias basadas en el rendimiento histórico</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Para Jugadores */}
+                  <div className="bg-gradient-to-br from-purple-900/40 to-purple-800/20 rounded-xl p-6 shadow-lg border border-purple-800/30">
+                    <div className="flex items-center mb-4">
+                      <div className="bg-purple-700/30 p-3 rounded-lg mr-4">
+                        <UserCircle className="h-6 w-6 text-purple-400" />
+                      </div>
+                      <h4 className="text-xl font-semibold text-purple-300">Para Jugadores</h4>
+                    </div>
+
+                    <ul className="space-y-3 text-gray-300">
+                      <li className="flex items-start">
+                        <div className="bg-purple-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-purple-400" />
+                        </div>
+                        <span>Visualiza tu evolución a lo largo de la temporada</span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-purple-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-purple-400" />
+                        </div>
+                        <span>Identifica áreas específicas para mejorar</span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-purple-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-purple-400" />
+                        </div>
+                        <span>Compara tu rendimiento con el de otros jugadores</span>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-purple-900/50 p-1 rounded-full mr-3 mt-1">
+                          <CheckCircle2 className="h-4 w-4 text-purple-400" />
+                        </div>
+                        <span>Trabaja en la consistencia de tu rendimiento</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección de consejos de uso */}
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl overflow-hidden shadow-xl">
+                <div className="p-6 md:p-8">
+                  <div className="flex items-center mb-6">
+                    <Lightbulb className="h-6 w-6 text-yellow-400 mr-3" />
+                    <h3 className="text-xl font-semibold">Cómo sacar el máximo provecho</h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <h4 className="font-medium mb-3 text-blue-300 flex items-center">
+                        <Gauge className="h-5 w-5 mr-2" />
+                        Análisis pre-partido
+                      </h4>
+                      <p className="text-sm text-gray-300">
+                        Utiliza Player Rankings y Radar Analysis para identificar fortalezas y debilidades de los
+                        jugadores antes de un partido. Esto te ayudará a planificar estrategias específicas.
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <h4 className="font-medium mb-3 text-green-300 flex items-center">
+                        <Dumbbell className="h-5 w-5 mr-2" />
+                        Desarrollo de jugadores
+                      </h4>
+                      <p className="text-sm text-gray-300">
+                        Combina Player Evolution y Consistency Analysis para crear planes de entrenamiento
+                        personalizados que ayuden a los jugadores a mejorar en áreas específicas y mantener un
+                        rendimiento constante.
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <h4 className="font-medium mb-3 text-purple-300 flex items-center">
+                        <PieChart className="h-5 w-5 mr-2" />
+                        Análisis post-partido
+                      </h4>
+                      <p className="text-sm text-gray-300">
+                        Utiliza Win vs Loss Analysis después de cada partido para identificar patrones y factores clave
+                        que influyeron en el resultado, permitiéndote ajustar estrategias para futuros encuentros.
+                      </p>
+                    </div>
+
+                    <div className="bg-white/5 rounded-lg p-4">
+                      <h4 className="font-medium mb-3 text-yellow-300 flex items-center">
+                        <Brain className="h-5 w-5 mr-2" />
+                        Toma de decisiones
+                      </h4>
+                      <p className="text-sm text-gray-300">
+                        Integra los datos de todas las herramientas para tomar decisiones informadas sobre rotaciones,
+                        estrategias de juego y áreas de enfoque en los entrenamientos.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -912,4 +1189,3 @@ export default function Home() {
     </div>
   )
 }
-
