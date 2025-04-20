@@ -3,9 +3,6 @@ import { PrismaClient } from "@prisma/client"
 import { playersData } from "@/app/players-data"
 import { TEAM_NAME } from "@/app/team-config"
 
-
-
-
 // Usar una única instancia de Prisma para evitar memory leaks en desarrollo
 const prisma = global.prisma || new PrismaClient()
 if (process.env.NODE_ENV === "development") global.prisma = prisma
@@ -29,11 +26,11 @@ export async function GET() {
     // Eliminar duplicados manualmente (MySQL no soporta distinct en Prisma)
     const uniquePlayers = Array.from(new Map(players.map((p) => [p.player_id, p])).values())
 
-    // Combinar con las imágenes de players-data
+    // Combinar con las imágenes y nombres de players-data
     const playersWithImages = uniquePlayers.map((player) => {
       return {
         player_id: player.player_id,
-        player_name: player.player_name || `Player: ${player.player_id}`,
+        player_name: player.player_name || playersData[player.player_id]?.name || `Player: ${player.player_id}`,
         image: playersData[player.player_id]?.image || "/placeholder.svg?height=400&width=300",
       }
     })
@@ -44,4 +41,3 @@ export async function GET() {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

@@ -25,9 +25,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       playerName = playerInfo.player_name
     }
 
-    // Si aún no tenemos nombre, usar un valor por defecto
+    // Convertir el ID a string para buscar en playersData
+    const playerIdStr = playerId.toString()
+
+    // Si no tenemos nombre en la base de datos, intentar obtenerlo de players-data.ts
     if (!playerName) {
-      playerName = `Player #${playerId}`
+      playerName = playersData[playerIdStr]?.name || `Player #${playerId}`
     }
 
     // Buscar estadísticas del jugador
@@ -97,7 +100,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     playerAverages.USG = USG
 
     // Obtener la imagen del jugador desde el archivo players-data.ts
-    const playerIdStr = playerId.toString()
     const playerImage = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
 
     return NextResponse.json({
@@ -111,4 +113,3 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }
-

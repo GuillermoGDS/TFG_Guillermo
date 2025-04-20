@@ -107,7 +107,7 @@ export default function PlayerPage() {
     )
   }
 
-  // Combine all simple stats into one array
+  // Combine all simple stats into one array with corrected percentage values
   const allSimpleStats = [
     { name: "Points per game", value: stats.PTS?.toFixed(1) || "0.0" },
     { name: "Assists per game", value: stats.AST?.toFixed(1) || "0.0" },
@@ -115,9 +115,10 @@ export default function PlayerPage() {
     { name: "Steals per game", value: stats.STL?.toFixed(1) || "0.0" },
     { name: "Blocks per game", value: stats.BLK?.toFixed(1) || "0.0" },
     { name: "Turnovers per game", value: stats.TOV?.toFixed(1) || "0.0" },
-    { name: "FG%", value: `${stats.FG_PCT?.toFixed(1) || "0.0"}%` },
-    { name: "3P%", value: `${stats.FG3_PCT?.toFixed(1) || "0.0"}%` },
-    { name: "FT%", value: `${stats.FT_PCT?.toFixed(1) || "0.0"}%` },
+    // Multiplicamos por 100 los valores de porcentaje para mostrarlos correctamente
+    { name: "FG%", value: `${(stats.FG_PCT * 100)?.toFixed(1) || "0.0"}%` },
+    { name: "3P%", value: `${(stats.FG3_PCT * 100)?.toFixed(1) || "0.0"}%` },
+    { name: "FT%", value: `${(stats.FT_PCT * 100)?.toFixed(1) || "0.0"}%` },
     { name: "Plus/Minus", value: stats.PLUS_MINUS?.toFixed(1) || "0.0" },
     { name: "Field Goals Made", value: stats.FGM?.toFixed(1) || "0.0" },
     { name: "Field Goals Attempted", value: stats.FGA?.toFixed(1) || "0.0" },
@@ -343,6 +344,7 @@ export default function PlayerPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {shootingStats.map((stat, index) => {
+                  // Extraer el valor numérico sin el símbolo %
                   const percentage = Number.parseFloat(stat.value)
                   const isHighlighted = isHighlightedStat(stat.name, percentage)
 
@@ -365,7 +367,7 @@ export default function PlayerPage() {
                       <div className="mt-4 relative h-4 bg-gray-700 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-green-500 rounded-full"
-                          style={{ width: `${Math.min(percentage, 100)}%` }}
+                          style={{ width: `${Math.min(Number.parseFloat(stat.value), 100)}%` }}
                         ></div>
                       </div>
                       <div className="mt-1 text-xs text-right text-gray-400">
@@ -497,10 +499,10 @@ export default function PlayerPage() {
                           Strong rebounding presence with {stats.REB?.toFixed(1)} rebounds per game
                         </li>
                       )}
-                      {Number.parseFloat(stats.FG_PCT?.toFixed(1) || "0") > 45 && (
+                      {Number.parseFloat((stats.FG_PCT * 100)?.toFixed(1) || "0") > 45 && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
-                          Efficient shooter with {stats.FG_PCT?.toFixed(1)}% field goal percentage
+                          Efficient shooter with {(stats.FG_PCT * 100)?.toFixed(1)}% field goal percentage
                         </li>
                       )}
                       {/* Fallback if no specific strengths are identified */}
@@ -508,7 +510,7 @@ export default function PlayerPage() {
                         Number.parseFloat(stats.PTS?.toFixed(1) || "0") > 15 ||
                         Number.parseFloat(stats.AST?.toFixed(1) || "0") > 5 ||
                         Number.parseFloat(stats.REB?.toFixed(1) || "0") > 7 ||
-                        Number.parseFloat(stats.FG_PCT?.toFixed(1) || "0") > 45
+                        Number.parseFloat((stats.FG_PCT * 100)?.toFixed(1) || "0") > 45
                       ) && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
@@ -529,23 +531,23 @@ export default function PlayerPage() {
                           Ball security could improve ({stats.TOV?.toFixed(1)} turnovers per game)
                         </li>
                       )}
-                      {Number.parseFloat(stats.FG3_PCT?.toFixed(1) || "0") < 33 && (
+                      {Number.parseFloat((stats.FG3_PCT * 100)?.toFixed(1) || "0") < 33 && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
-                          Three-point shooting efficiency ({stats.FG3_PCT?.toFixed(1)}%)
+                          Three-point shooting efficiency ({(stats.FG3_PCT * 100)?.toFixed(1)}%)
                         </li>
                       )}
-                      {Number.parseFloat(stats.FT_PCT?.toFixed(1) || "0") < 75 && (
+                      {Number.parseFloat((stats.FT_PCT * 100)?.toFixed(1) || "0") < 75 && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
-                          Free throw consistency ({stats.FT_PCT?.toFixed(1)}%)
+                          Free throw consistency ({(stats.FT_PCT * 100)?.toFixed(1)}%)
                         </li>
                       )}
                       {/* Fallback if no specific development areas are identified */}
                       {!(
                         Number.parseFloat(stats.TOV?.toFixed(1) || "0") > 3 ||
-                        Number.parseFloat(stats.FG3_PCT?.toFixed(1) || "0") < 33 ||
-                        Number.parseFloat(stats.FT_PCT?.toFixed(1) || "0") < 75
+                        Number.parseFloat((stats.FG3_PCT * 100)?.toFixed(1) || "0") < 33 ||
+                        Number.parseFloat((stats.FT_PCT * 100)?.toFixed(1) || "0") < 75
                       ) && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
@@ -568,28 +570,113 @@ export default function PlayerPage() {
           </div>
 
           <div className="bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl p-8 shadow-lg">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold">Coming Soon</h3>
-              <p className="text-gray-400 mt-2">
-                Interactive performance charts and visualizations will be available in a future update.
-              </p>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Radar Analysis Card */}
+              <div className="bg-gray-900/50 rounded-xl p-6 relative overflow-hidden">
+                <div className="flex items-center mb-4">
+                  <div className="bg-blue-600 rounded-full p-2 mr-3">
+                    <BarChart3 className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Player Radar Analysis</h3>
+                </div>
 
-            <div className="flex justify-center items-center h-48 bg-gray-900/50 rounded-lg">
-              <div className="text-center">
-                <Activity className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500">Performance data visualization</p>
+                <p className="text-gray-300 mb-6">
+                  Visualize {playerData?.name}'s performance across multiple statistical categories in an interactive
+                  radar chart.
+                </p>
+
+                {/* Visual elements suggesting a radar chart */}
+                <div className="absolute right-0 top-0 h-full w-1/2 opacity-10 pointer-events-none">
+                  <div className="absolute top-1/4 right-1/4 h-3 w-3 rounded-full bg-blue-500"></div>
+                  <div className="absolute top-1/2 right-1/3 h-3 w-3 rounded-full bg-green-500"></div>
+                  <div className="absolute bottom-1/3 right-1/4 h-3 w-3 rounded-full bg-yellow-500"></div>
+                  <div className="absolute bottom-1/4 right-1/2 h-3 w-3 rounded-full bg-purple-500"></div>
+                  <div className="absolute top-1/3 right-1/2 h-3 w-3 rounded-full bg-red-500"></div>
+                </div>
+
+                <Link
+                  href="/analytics/idea-3"
+                  className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-800 text-white px-5 py-3 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  View Radar Analysis
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </div>
-            </div>
 
-            <div className="mt-6 text-center">
-              <Link
-                href="/analytics/idea-3"
-                className="inline-flex items-center bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 px-5 py-3 rounded-lg transition-colors"
-              >
-                View Player Radar Analysis
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              {/* Performance Metrics Card */}
+              <div className="bg-gray-900/50 rounded-xl p-6">
+                <div className="flex items-center mb-4">
+                  <div className="bg-purple-600 rounded-full p-2 mr-3">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Performance Metrics</h3>
+                </div>
+
+                <div className="space-y-6 mb-6">
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-gray-300">Offensive Impact</span>
+                      <span className="text-green-400 font-medium">
+                        {Number.parseFloat(stats?.PTS?.toFixed(1) || "0") > 20
+                          ? "Elite"
+                          : Number.parseFloat(stats?.PTS?.toFixed(1) || "0") > 15
+                            ? "Strong"
+                            : "Average"}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-green-500 to-blue-500"
+                        style={{
+                          width: `${Math.min(Number.parseFloat(stats?.PTS?.toFixed(1) || "0") * 3, 100)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-gray-300">Playmaking</span>
+                      <span className="text-blue-400 font-medium">
+                        {Number.parseFloat(stats?.AST?.toFixed(1) || "0") > 7
+                          ? "Elite"
+                          : Number.parseFloat(stats?.AST?.toFixed(1) || "0") > 4
+                            ? "Strong"
+                            : "Average"}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        style={{
+                          width: `${Math.min(Number.parseFloat(stats?.AST?.toFixed(1) || "0") * 8, 100)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-gray-300">Shooting Efficiency</span>
+                      <span className="text-yellow-400 font-medium">
+                        {Number.parseFloat((stats?.FG_PCT * 100)?.toFixed(1) || "0") > 50
+                          ? "Elite"
+                          : Number.parseFloat((stats?.FG_PCT * 100)?.toFixed(1) || "0") > 45
+                            ? "Strong"
+                            : "Average"}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-orange-500"
+                        style={{
+                          width: `${Math.min(Number.parseFloat((stats?.FG_PCT * 100)?.toFixed(1) || "0"), 100)}%`,
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -604,4 +691,3 @@ export default function PlayerPage() {
     </div>
   )
 }
-
