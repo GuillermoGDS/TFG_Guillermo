@@ -242,11 +242,14 @@ export async function GET(req: Request): Promise<NextResponse> {
 
         // Get player image from players-data.ts
         const playerIdStr = player.player_id.toString()
-        const playerImage = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
+        const playerData = playersData[playerIdStr]
+        const playerImage = playerData?.image || "/placeholder.svg?height=400&width=300"
+        // Usar el nombre del objeto playersData si está disponible, de lo contrario usar el nombre de la base de datos
+        const playerName = playerData?.name || player.player_name
 
         return {
           playerId: player.player_id,
-          name: player.player_name,
+          name: playerName,
           image: playerImage,
           averages: playerAverages,
           advancedStats: {
@@ -372,4 +375,3 @@ export async function GET(req: Request): Promise<NextResponse> {
     await prisma.$disconnect()
   }
 }
-

@@ -223,13 +223,15 @@ export async function GET(req: Request): Promise<NextResponse> {
           }
         })
 
-        // Get player image
+        // Get player image and name from playersData
         const playerIdStr = player.player_id.toString()
         const playerImage = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
+        // Use name from playersData if available, otherwise use database name
+        const playerName = playersData[playerIdStr]?.name || player.player_name || "Unknown Player"
 
         return {
           playerId: player.player_id,
-          playerName: player.player_name || "Unknown Player",
+          playerName: playerName,
           image: playerImage,
           stats,
         }

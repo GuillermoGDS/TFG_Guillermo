@@ -7,22 +7,25 @@ const prisma = global.prisma || new PrismaClient()
 if (process.env.NODE_ENV === "development") global.prisma = prisma
 
 // Importar el módulo de imágenes de jugadores de manera dinámica para evitar problemas de inicialización
-async function getPlayerImage(playerId: number): Promise<string> {
+async function getPlayerImage(playerId: number): Promise<{ image: string; name?: string }> {
   try {
     // Intentamos importar el módulo de manera dinámica
     const playersDataModule = await import("@/app/players-data")
     const playersData = playersDataModule.playersData
 
     // Si existe el jugador en el módulo, devolvemos su imagen
-    if (playersData && playersData[playerId.toString()]?.image) {
-      return playersData[playerId.toString()].image
+    if (playersData && playersData[playerId.toString()]) {
+      return {
+        image: playersData[playerId.toString()].image,
+        name: playersData[playerId.toString()].name,
+      }
     }
   } catch (error) {
     console.error("Error loading player image:", error)
   }
 
   // Si hay algún error o no se encuentra la imagen, devolvemos un placeholder
-  return `/placeholder.svg?height=400&width=300`
+  return { image: `/placeholder.svg?height=400&width=300` }
 }
 
 interface PlayerStats {
@@ -141,15 +144,18 @@ export async function GET(req: Request): Promise<NextResponse> {
           },
         })
 
-        // Obtener la imagen del jugador usando la función auxiliar
-        const playerImage = await getPlayerImage(player.player_id)
+        // Obtener la imagen y nombre del jugador usando la función auxiliar
+        const playerImageData = await getPlayerImage(player.player_id)
+
+        // Usar el nombre de playersData si está disponible, de lo contrario usar el de la base de datos
+        const playerName = playerImageData.name || player.player_name || "Unknown Player"
 
         if (stats.length === 0) {
           // Return default structure with zeros for players with no stats
           return {
             playerId: player.player_id,
-            name: player.player_name || "Unknown Player",
-            image: playerImage,
+            name: playerName,
+            image: playerImageData.image,
             gamesPlayed: 0,
             stats: statsToInclude.map((stat) => ({
               stat: stat.key,
@@ -209,8 +215,8 @@ export async function GET(req: Request): Promise<NextResponse> {
         if (totalGames === 0) {
           return {
             playerId: player.player_id,
-            name: player.player_name || "Unknown Player",
-            image: playerImage,
+            name: playerName,
+            image: playerImageData.image,
             gamesPlayed: 0,
             stats: statsToInclude.map((stat) => ({
               stat: stat.key,
@@ -246,8 +252,8 @@ export async function GET(req: Request): Promise<NextResponse> {
 
         return {
           playerId: player.player_id,
-          name: player.player_name || "Unknown Player",
-          image: playerImage,
+          name: playerName,
+          image: playerImageData.image,
           gamesPlayed: totalGames,
           stats: playerStats,
         }
@@ -310,4 +316,3 @@ export async function GET(req: Request): Promise<NextResponse> {
     await prisma.$disconnect()
   }
 }
-

@@ -149,12 +149,15 @@ export async function GET(req: Request): Promise<NextResponse> {
           },
         })
 
-        // Get player image
-        const playerImage = playersData[player.player_id.toString()]?.image || "/placeholder.svg?height=400&width=300"
+        // Get player image and name from playersData
+        const playerIdStr = player.player_id.toString()
+        const playerImage = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
+        // Use name from playersData if available, otherwise use database name
+        const playerName = playersData[playerIdStr]?.name || player.player_name || "Unknown Player"
 
         if (stats.length === 0) {
           // Return default structure with zeros for players with no stats
-          return createEmptyPlayerData(player.player_id, player.player_name || "Unknown Player", playerImage)
+          return createEmptyPlayerData(player.player_id, playerName, playerImage)
         }
 
         // Process game stats
@@ -334,7 +337,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
         return {
           playerId: player.player_id,
-          name: player.player_name || "Unknown Player",
+          name: playerName,
           image: playerImage,
           gamesPlayed: gameStats.length,
           averages,

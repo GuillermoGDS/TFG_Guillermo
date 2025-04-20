@@ -137,7 +137,7 @@ export async function GET(req: Request): Promise<NextResponse> {
           // Return default structure with zeros for players with no stats
           return {
             playerId: player.player_id,
-            name: player.player_name || "Unknown Player",
+            name: playersData[player.player_id.toString()]?.name || player.player_name || "Unknown Player",
             image: playersData[player.player_id.toString()]?.image || "/placeholder.svg?height=400&width=300",
             wins: {
               averages: createEmptyAverages(),
@@ -191,7 +191,7 @@ export async function GET(req: Request): Promise<NextResponse> {
 
         return {
           playerId: player.player_id,
-          name: player.player_name || "Unknown Player",
+          name: playersData[player.player_id.toString()]?.name || player.player_name || "Unknown Player",
           image: playerImage,
           wins: {
             averages: winAverages,
@@ -404,4 +404,3 @@ function calculateAdvancedStats(stats: PlayerStatsGroup, averages: PlayerAverage
     USG: usg,
   }
 }
-
