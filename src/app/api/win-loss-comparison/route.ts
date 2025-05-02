@@ -221,27 +221,27 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     // Define the stats we want to include in the response
     const simpleStatsToInclude = [
-      { key: "PTS", label: "Points" },
-      { key: "AST", label: "Assists" },
-      { key: "REB", label: "Rebounds" },
-      { key: "STL", label: "Steals" },
-      { key: "BLK", label: "Blocks" },
-      { key: "TOV", label: "Turnovers" },
-      { key: "FG_PCT", label: "FG%" },
-      { key: "FG3_PCT", label: "3PT%" },
-      { key: "FT_PCT", label: "FT%" },
+      { key: "PTS", label: "Puntos" },
+      { key: "AST", label: "Asistencias" },
+      { key: "REB", label: "Rebotes" },
+      { key: "STL", label: "Robos" },
+      { key: "BLK", label: "Tapones" },
+      { key: "TOV", label: "Pérdidas" },
+      { key: "FG_PCT", label: "% Tiros de campo" },
+      { key: "FG3_PCT", label: "% Triples" },
+      { key: "FT_PCT", label: "% Tiros libres" },
       { key: "PLUS_MINUS", label: "Plus/Minus" },
     ]
 
     const advancedStatsToInclude = [
-      { key: "OffRtg", label: "Offensive Rating" },
-      { key: "DefRtg", label: "Defensive Rating" },
-      { key: "NetRtg", label: "Net Rating" },
-      { key: "TS", label: "True Shooting %" },
-      { key: "eFG", label: "Effective FG%" },
-      { key: "ASTtoTO", label: "AST/TO Ratio" },
-      { key: "TOVpercent", label: "Turnover %" },
-      { key: "USG", label: "Usage Rate" },
+      { key: "OffRtg", label: "Rating Ofensivo" },
+      { key: "DefRtg", label: "Rating Defensivo" },
+      { key: "NetRtg", label: "Rating Neto" },
+      { key: "TS", label: "% Tiro Verdadero" },
+      { key: "eFG", label: "% Tiro Efectivo" },
+      { key: "ASTtoTO", label: "Ratio AST/PÉR" },
+      { key: "TOVpercent", label: "% Pérdidas" },
+      { key: "USG", label: "% Uso" },
     ]
 
     return NextResponse.json({

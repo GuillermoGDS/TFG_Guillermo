@@ -235,7 +235,7 @@ export default function SpiderChartAnalysis() {
 
   // Custom Spider/Radar Chart component using SVG
   const SpiderChart = ({ players, showLegend = false }: { players: Player[]; showLegend?: boolean }) => {
-    const size = 380 // Aumentar aún más el tamaño para dar más espacio horizontal
+    const size = 400 // Aumentar de 380 a 400 para dar más espacio
     const centerX = size / 2
     const centerY = size / 2
     const radius = size * 0.32 // Reducir aún más el radio para dejar más espacio para las etiquetas
@@ -359,12 +359,16 @@ export default function SpiderChartAnalysis() {
 
             // Ajustar la distancia de las etiquetas según su posición
             // Las etiquetas horizontales (izquierda/derecha) necesitan más espacio
-            let labelDistance = radius * 1.3 // Distancia base aumentada
+            let labelDistance = radius * 1.5 // Aumentar de 1.4 a 1.5
 
+            // Dar más espacio específicamente a "Asistencias" si existe
+            if (stat.label === "Asistencias" || stat.label.includes("Asist")) {
+              labelDistance = radius * 1.8 // Dar mucho más espacio a Asistencias
+            }
             // Ajustar específicamente para las etiquetas horizontales
-            if (Math.abs(Math.cos(angle)) > 0.7) {
+            else if (Math.abs(Math.cos(angle)) > 0.7) {
               // Etiquetas más horizontales
-              labelDistance = radius * 1.5 // Dar más espacio a las etiquetas horizontales
+              labelDistance = radius * 1.7 // Aumentar de 1.6 a 1.7
             }
 
             const x = centerX + labelDistance * Math.cos(angle)
@@ -376,7 +380,7 @@ export default function SpiderChartAnalysis() {
             else if (angle > (3 * Math.PI) / 4 || angle < (-3 * Math.PI) / 4) textAnchor = "end"
 
             // Ajustar posición para evitar cortes en los bordes
-            const paddingX = 20 // Aumentar el padding horizontal
+            const paddingX = 35 // Aumentar de 30 a 35
             const adjustedX = Math.min(Math.max(x, paddingX), size - paddingX)
 
             // Determinar si esta es una etiqueta horizontal (izquierda o derecha)
@@ -504,7 +508,7 @@ export default function SpiderChartAnalysis() {
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <Loader2 className="w-16 h-16 text-blue-600 animate-spin mb-4" />
-          <h1 className="text-2xl font-semibold">Loading statistics...</h1>
+          <h1 className="text-2xl font-semibold">Cargando estadísticas...</h1>
         </div>
       </div>
     )
@@ -517,10 +521,10 @@ export default function SpiderChartAnalysis() {
           <div className="bg-red-500/20 p-4 rounded-full mb-4">
             <TrendingUp className="w-16 h-16 text-red-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">Error Loading Statistics</h1>
+          <h1 className="text-2xl font-semibold mb-4">Error al Cargar Estadísticas</h1>
           <p className="text-gray-400 mb-6">{error}</p>
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -534,10 +538,10 @@ export default function SpiderChartAnalysis() {
           <div className="bg-yellow-500/20 p-4 rounded-full mb-4">
             <Activity className="w-16 h-16 text-yellow-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">No Data Available</h1>
+          <h1 className="text-2xl font-semibold mb-4">No Hay Datos Disponibles</h1>
           <p className="text-gray-400 mb-6">No player statistics data is currently available.</p>
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -554,15 +558,7 @@ export default function SpiderChartAnalysis() {
               <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
             </Link>
             <div>
-              <div className="flex items-center">
-                <h1 className="text-4xl md:text-5xl font-bold">Player Radar Analysis</h1>
-                <div className="ml-4 flex items-center justify-center p-2 rounded-lg bg-white/10">
-                  <Activity className="h-6 w-6" />
-                </div>
-              </div>
-              <p className="text-blue-100 mt-2">
-                {data.team} • {data.season} Season
-              </p>
+              <h1 className="text-4xl md:text-5xl font-bold">Análisis de Radar de Jugador</h1>
             </div>
           </div>
         </div>
@@ -651,7 +647,7 @@ export default function SpiderChartAnalysis() {
                     </div>
                     <div className="text-left flex-grow">
                       <div className="font-medium">{player.name}</div>
-                      <div className="text-xs text-gray-400">{player.gamesPlayed} games played</div>
+                      <div className="text-xs text-gray-400">{player.gamesPlayed} partidos jugados</div>
                     </div>
                     {isSelected && activeTab === "comparison" && (
                       <button
@@ -689,7 +685,8 @@ export default function SpiderChartAnalysis() {
                       <div>
                         <h2 className="text-2xl font-bold">{selectedPlayers[0].name}</h2>
                         <p className="text-gray-400">
-                          {selectedPlayers[0].gamesPlayed} games played • {data.season} Season
+                          {selectedPlayers[0].gamesPlayed} partidos jugados • Temporada{" "}
+                          {data.season.replace("22021", "2021")}
                         </p>
                       </div>
                     </div>
@@ -701,7 +698,7 @@ export default function SpiderChartAnalysis() {
                     {/* Stats Table */}
                     <div className="mt-8">
                       <h3 className="text-lg font-semibold mb-4 flex items-center">
-                        Detailed Statistics
+                        Estadísticas Detalladas
                         <div className="relative ml-2 group">
                           <Info className="h-4 w-4 text-gray-400" />
                           <div className="absolute left-0 top-full mt-2 w-64 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
@@ -763,7 +760,10 @@ export default function SpiderChartAnalysis() {
                                   </div>
                                   <div>
                                     <h3 className="font-bold">{player.name}</h3>
-                                    <p className="text-xs text-gray-400">{player.gamesPlayed} games played</p>
+                                    <p className="text-xs text-gray-400">
+                                      {player.gamesPlayed} partidos jugados • Temporada{" "}
+                                      {data.season.replace("22021", "2021")}
+                                    </p>
                                   </div>
                                 </div>
 
@@ -812,7 +812,7 @@ export default function SpiderChartAnalysis() {
         {/* Explanation Section */}
         <div className="mt-16">
           <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">About Radar Analysis</h2>
+            <h2 className="text-3xl font-bold">Acerca del Análisis de Radar</h2>
             <div className="ml-4 h-1 flex-grow bg-indigo-600 rounded-full"></div>
           </div>
 
@@ -848,10 +848,9 @@ export default function SpiderChartAnalysis() {
       {/* Footer */}
       <footer className="w-full bg-gray-900 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
+          <p>© {new Date().getFullYear()} Análisis de Baloncesto. TFG Guillermo</p>
         </div>
       </footer>
     </div>
   )
 }
-

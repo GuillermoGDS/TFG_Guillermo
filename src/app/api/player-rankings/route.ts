@@ -282,25 +282,25 @@ export async function GET(req: Request): Promise<NextResponse> {
       advanced: {},
     }
 
-    // Simple stats rankings
+    // Simple stats rankings - TRADUCIDOS AL ESPAÑOL
     const simpleStatsToRank: StatToRank[] = [
-      { key: "PTS", label: "Points per game" },
-      { key: "AST", label: "Assists per game" },
-      { key: "REB", label: "Rebounds per game" },
-      { key: "STL", label: "Steals per game" },
-      { key: "BLK", label: "Blocks per game" },
-      { key: "TOV", label: "Turnovers per game" },
-      { key: "FG_PCT", label: "FG%" },
-      { key: "FG3_PCT", label: "FG3%" },
-      { key: "FT_PCT", label: "FT%" },
+      { key: "PTS", label: "Puntos por partido" },
+      { key: "AST", label: "Asistencias por partido" },
+      { key: "REB", label: "Rebotes por partido" },
+      { key: "STL", label: "Robos por partido" },
+      { key: "BLK", label: "Tapones por partido" },
+      { key: "TOV", label: "Pérdidas por partido" },
+      { key: "FG_PCT", label: "% Tiros de campo" },
+      { key: "FG3_PCT", label: "% Triples" },
+      { key: "FT_PCT", label: "% Tiros libres" },
       { key: "PLUS_MINUS", label: "Plus/Minus" },
-      { key: "FGM", label: "Field Goals Made" },
-      { key: "FGA", label: "Field Goals Attempted" },
-      { key: "FTM", label: "Free Throws Made" },
-      { key: "FTA", label: "Free Throws Attempted" },
-      { key: "OREB", label: "Offensive Rebounds" },
-      { key: "DREB", label: "Defensive Rebounds" },
-      { key: "GAMES_PLAYED", label: "Games Played" },
+      { key: "FGM", label: "Tiros de campo anotados" },
+      { key: "FGA", label: "Tiros de campo intentados" },
+      { key: "FTM", label: "Tiros libres anotados" },
+      { key: "FTA", label: "Tiros libres intentados" },
+      { key: "OREB", label: "Rebotes ofensivos" },
+      { key: "DREB", label: "Rebotes defensivos" },
+      { key: "GAMES_PLAYED", label: "Partidos jugados" },
     ]
 
     simpleStatsToRank.forEach((stat) => {
@@ -325,14 +325,14 @@ export async function GET(req: Request): Promise<NextResponse> {
       }
     })
 
-    // Advanced stats rankings
+    // Advanced stats rankings - TRADUCIDOS AL ESPAÑOL
     const advancedStatsToRank: StatToRank[] = [
-      { key: "OffRtg", label: "Offensive Rating (OffRtg)" },
-      { key: "TS", label: "True Shooting % (TS%)" },
-      { key: "eFG", label: "Effective Field Goal % (eFG%)" },
-      { key: "ASTtoTO", label: "Assist to Turnover Ratio (AST/TO)" },
-      { key: "TOVpercent", label: "Turnover Percentage (TOV%)" },
-      { key: "USG", label: "Usage Rate (USG%)" },
+      { key: "OffRtg", label: "Rating Ofensivo" },
+      { key: "TS", label: "% Tiro Efectivo" },
+      { key: "eFG", label: "% Tiro Efectivo de Campo" },
+      { key: "ASTtoTO", label: "Ratio Asistencias/Pérdidas" },
+      { key: "TOVpercent", label: "% de Pérdidas" },
+      { key: "USG", label: "% de Uso" },
     ]
 
     advancedStatsToRank.forEach((stat) => {

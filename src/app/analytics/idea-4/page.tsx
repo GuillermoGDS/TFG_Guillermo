@@ -33,6 +33,11 @@ interface PlayerEvolution {
   stats: {
     [key: string]: StatPoint[]
   }
+  trend?: {
+    value: number
+    percentage: number
+    isPositive: boolean
+  }
 }
 
 interface ApiResponse {
@@ -58,36 +63,72 @@ interface TooltipData {
 // Stat options with labels and colors
 const statOptions = [
   // Simple Stats
-  { key: "PTS", label: "Points", color: "#4f46e5", category: "simple" },
-  { key: "AST", label: "Assists", color: "#0ea5e9", category: "simple" },
-  { key: "REB", label: "Rebounds", color: "#10b981", category: "simple" },
-  { key: "STL", label: "Steals", color: "#f59e0b", category: "simple" },
-  { key: "BLK", label: "Blocks", color: "#8b5cf6", category: "simple" },
-  { key: "TOV", label: "Turnovers", color: "#ef4444", category: "simple" },
-  { key: "FG_PCT", label: "FG%", color: "#ec4899", category: "simple" },
-  { key: "FG3_PCT", label: "3PT%", color: "#3b82f6", category: "simple" },
-  { key: "FT_PCT", label: "FT%", color: "#eab308", category: "simple" },
+  { key: "PTS", label: "Puntos", color: "#4f46e5", category: "simple" },
+  { key: "AST", label: "Asistencias", color: "#0ea5e9", category: "simple" },
+  { key: "REB", label: "Rebotes", color: "#10b981", category: "simple" },
+  { key: "STL", label: "Robos", color: "#f59e0b", category: "simple" },
+  { key: "BLK", label: "Tapones", color: "#8b5cf6", category: "simple" },
+  { key: "TOV", label: "Pérdidas", color: "#ef4444", category: "simple" },
+  { key: "FG_PCT", label: "% Tiros", color: "#ec4899", category: "simple" },
+  { key: "FG3_PCT", label: "% Triples", color: "#3b82f6", category: "simple" },
+  { key: "FT_PCT", label: "% Tiros Libres", color: "#eab308", category: "simple" },
   { key: "PLUS_MINUS", label: "+/-", color: "#6366f1", category: "simple" },
-  { key: "MIN", label: "Minutes", color: "#94a3b8", category: "simple" },
+  { key: "MIN", label: "Minutos", color: "#94a3b8", category: "simple" },
 
   // Advanced Stats
-  { key: "PER", label: "PER", color: "#0891b2", category: "advanced", description: "Player Efficiency Rating" },
-  { key: "TS_PCT", label: "TS%", color: "#7c3aed", category: "advanced", description: "True Shooting %" },
-  { key: "EFG_PCT", label: "eFG%", color: "#4338ca", category: "advanced", description: "Effective Field Goal %" },
-  { key: "USG_PCT", label: "USG%", color: "#db2777", category: "advanced", description: "Usage Rate" },
-  { key: "PIE", label: "PIE", color: "#ea580c", category: "advanced", description: "Player Impact Estimate" },
-  { key: "NETRTG", label: "Net Rtg", color: "#059669", category: "advanced", description: "Net Rating" },
-  { key: "AST_TO", label: "AST/TO", color: "#d946ef", category: "advanced", description: "Assist to Turnover Ratio" },
-  { key: "REB_PG", label: "REB/36", color: "#0284c7", category: "advanced", description: "Rebounds per 36 min" },
-  { key: "STL_BLK", label: "STL+BLK", color: "#f97316", category: "advanced", description: "Steals + Blocks" },
+  {
+    key: "OffRtg",
+    label: "Rating Ofensivo",
+    color: "#0891b2",
+    category: "advanced",
+    description: "Puntos por 100 posesiones",
+  },
+  {
+    key: "TS",
+    label: "% Tiro Efectivo",
+    color: "#7c3aed",
+    category: "advanced",
+    description: "Eficiencia de tiro considerando FG, 3PT y TL",
+  },
+  {
+    key: "eFG",
+    label: "% Tiro Efectivo de Campo",
+    color: "#4338ca",
+    category: "advanced",
+    description: "Eficiencia de tiro considerando el valor de los triples",
+  },
+  {
+    key: "ASTtoTO",
+    label: "Ratio AST/TO",
+    color: "#db2777",
+    category: "advanced",
+    description: "Ratio de Asistencias a Pérdidas",
+  },
+  {
+    key: "TOVpercent",
+    label: "% Pérdidas",
+    color: "#ea580c",
+    category: "advanced",
+    description: "Porcentaje de posesiones que terminan en pérdida",
+  },
+  {
+    key: "USG",
+    label: "% de Uso",
+    color: "#059669",
+    category: "advanced",
+    description: "Porcentaje de jugadas del equipo usadas por el jugador",
+  },
 ]
 
 // Time range options
 const timeRangeOptions = [
-  { key: "10", label: "Last 10 Games" },
-  { key: "20", label: "Last 20 Games" },
-  { key: "30", label: "Last 30 Games" },
+  { key: "10", label: "Últimos 10 Partidos" },
+  { key: "20", label: "Últimos 20 Partidos" },
+  { key: "30", label: "Últimos 30 Partidos" },
 ]
+
+// Modificar la función calculateTrend para que acepte un parámetro de estadística opcional
+// y devuelva también el jugador para facilitar el uso en la vista de tendencias
 
 export default function PlayerEvolution() {
   const [data, setData] = useState<ApiResponse | null>(null)
@@ -97,7 +138,7 @@ export default function PlayerEvolution() {
   const [selectedPlayers, setSelectedPlayers] = useState<number[]>([])
   const [timeRange, setTimeRange] = useState<string>("20")
   const [searchTerm, setSearchTerm] = useState("")
-  const [activeView, setActiveView] = useState<"individual" | "team">("individual")
+  const [activeView, setActiveView] = useState<"individual" | "team" | "trends">("individual")
   const chartRef = useRef<HTMLCanvasElement>(null)
   const teamChartRef = useRef<HTMLCanvasElement>(null)
   const [statCategory, setStatCategory] = useState<"simple" | "advanced">("simple")
@@ -176,7 +217,7 @@ export default function PlayerEvolution() {
         }
       } catch (error) {
         console.error("Error fetching player evolution data:", error)
-        setError("Failed to load player statistics. Please try again later.")
+        setError("No se pudieron cargar las estadísticas de jugadores. Por favor, inténtalo más tarde.")
       } finally {
         setLoading(false)
       }
@@ -310,7 +351,7 @@ export default function PlayerEvolution() {
     // Chart dimensions
     const width = canvas.offsetWidth
     const height = canvas.offsetHeight
-    const padding = { top: 30, right: 30, bottom: 50, left: 60 }
+    const padding = { top: 30, right: 30, bottom: 90, left: 60 }
     const chartWidth = width - padding.left - padding.right
     const chartHeight = height - padding.top - padding.bottom
 
@@ -323,7 +364,13 @@ export default function PlayerEvolution() {
 
     // Add some padding to min/max
     const valueRange = maxValue - minValue
-    minValue = Math.max(0, minValue - valueRange * 0.1)
+    // Para estadísticas que pueden ser negativas como +/-, permitimos valores negativos
+    if (selectedStat === "PLUS_MINUS") {
+      minValue = minValue - valueRange * 0.25
+    } else {
+      // Para otras estadísticas mantenemos el mínimo en 0
+      minValue = Math.max(0, minValue - valueRange * 0.25)
+    }
     maxValue = maxValue + valueRange * 0.1
 
     // If all values are the same, create some range
@@ -383,7 +430,7 @@ export default function PlayerEvolution() {
         ctx.font = "12px sans-serif"
         ctx.textAlign = "center"
         ctx.textBaseline = "top"
-        ctx.fillText(formattedDate, x, padding.top + chartHeight + 10)
+        ctx.fillText(formattedDate, x, padding.top + chartHeight + 20)
       }
     }
 
@@ -392,7 +439,7 @@ export default function PlayerEvolution() {
     ctx.font = "14px sans-serif"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
-    ctx.fillText("Date", width / 2, height - 15)
+    ctx.fillText("Fecha", width / 2, height - 25)
 
     ctx.save()
     ctx.translate(15, height / 2)
@@ -545,13 +592,18 @@ export default function PlayerEvolution() {
     // Chart dimensions
     const width = canvas.offsetWidth
     const height = canvas.offsetHeight
-    const padding = { top: 30, right: 30, bottom: 50, left: 60 }
+    const padding = { top: 30, right: 30, bottom: 90, left: 60 }
     const chartWidth = width - padding.left - padding.right
     const chartHeight = height - padding.top - padding.bottom
 
     // Get all players with data for the selected stat
     const playersWithData = data.players
       .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length > 0)
+      .sort((a, b) => {
+        const aValue = a.stats[selectedStat][a.stats[selectedStat].length - 1].value
+        const bValue = b.stats[selectedStat][b.stats[selectedStat].length - 1].value
+        return bValue - aValue
+      })
       .slice(0, 5) // Limit to top 5 players for clarity
 
     if (playersWithData.length === 0) return
@@ -569,7 +621,13 @@ export default function PlayerEvolution() {
 
     // Add some padding to min/max
     const valueRange = maxValue - minValue
-    minValue = Math.max(0, minValue - valueRange * 0.1)
+    // Para estadísticas que pueden ser negativas como +/-, permitimos valores negativos
+    if (selectedStat === "PLUS_MINUS") {
+      minValue = minValue - valueRange * 0.25
+    } else {
+      // Para otras estadísticas mantenemos el mínimo en 0
+      minValue = Math.max(0, minValue - valueRange * 0.25)
+    }
     maxValue = maxValue + valueRange * 0.1
 
     // If all values are the same, create some range
@@ -630,7 +688,7 @@ export default function PlayerEvolution() {
         ctx.font = "12px sans-serif"
         ctx.textAlign = "center"
         ctx.textBaseline = "top"
-        ctx.fillText(`Game ${lastNGames - gameNumber}`, x, padding.top + chartHeight + 10)
+        ctx.fillText(`Partido ${lastNGames - gameNumber}`, x, padding.top + chartHeight + 20)
       }
     }
 
@@ -639,7 +697,7 @@ export default function PlayerEvolution() {
     ctx.font = "14px sans-serif"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
-    ctx.fillText("Recent Games", width / 2, height - 15)
+    ctx.fillText("Partidos Recientes", width / 2, height - 25)
 
     ctx.save()
     ctx.translate(15, height / 2)
@@ -774,7 +832,7 @@ export default function PlayerEvolution() {
         formattedValue = `${(teamTooltip.value * 100).toFixed(1)}%`
       }
 
-      ctx.fillText(`Player: ${teamTooltip.playerName}`, tooltipX + 10, tooltipY + 10)
+      ctx.fillText(`Jugador: ${teamTooltip.playerName}`, tooltipX + 10, tooltipY + 10)
       ctx.fillText(formattedDate, tooltipX + 10, tooltipY + 30)
       ctx.fillText(
         `${statOptions.find((s) => s.key === selectedStat)?.label}: ${formattedValue}`,
@@ -801,8 +859,12 @@ export default function PlayerEvolution() {
 
   // Format value for display
   const formatStatValue = (value: number) => {
-    if (["FG_PCT", "FG3_PCT", "FT_PCT", "TS_PCT", "EFG_PCT", "USG_PCT", "PIE"].includes(selectedStat)) {
+    if (["FG_PCT", "FG3_PCT", "FT_PCT", "TS", "eFG", "USG"].includes(selectedStat)) {
       return `${(value * 100).toFixed(1)}%`
+    } else if (selectedStat === "ASTtoTO") {
+      return value.toFixed(2)
+    } else if (selectedStat === "TOVpercent") {
+      return `${value.toFixed(1)}%`
     }
     return value.toFixed(1)
   }
@@ -826,7 +888,7 @@ export default function PlayerEvolution() {
     if (category === "simple") {
       setSelectedStat("PTS")
     } else {
-      setSelectedStat("PER")
+      setSelectedStat("OffRtg")
     }
   }
 
@@ -835,7 +897,7 @@ export default function PlayerEvolution() {
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <Loader2 className="w-16 h-16 text-indigo-500 animate-spin mb-4" />
-          <h1 className="text-2xl font-semibold">Loading statistics...</h1>
+          <h1 className="text-2xl font-semibold">Cargando estadísticas...</h1>
         </div>
       </div>
     )
@@ -848,13 +910,13 @@ export default function PlayerEvolution() {
           <div className="bg-red-500/20 p-4 rounded-full mb-4">
             <TrendingUp className="w-16 h-16 text-red-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">Error Loading Statistics</h1>
+          <h1 className="text-2xl font-semibold mb-4">Error al Cargar Estadísticas</h1>
           <p className="text-gray-400 mb-6">{error}</p>
           <Link
             href="/"
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors"
           >
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -868,13 +930,13 @@ export default function PlayerEvolution() {
           <div className="bg-yellow-500/20 p-4 rounded-full mb-4">
             <BarChart3 className="w-16 h-16 text-yellow-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">No Data Available</h1>
-          <p className="text-gray-400 mb-6">No player statistics data is currently available.</p>
+          <h1 className="text-2xl font-semibold mb-4">No Hay Datos Disponibles</h1>
+          <p className="text-gray-400 mb-6">No hay datos de estadísticas de jugadores disponibles actualmente.</p>
           <Link
             href="/"
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg transition-colors"
           >
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -885,20 +947,48 @@ export default function PlayerEvolution() {
   const selectedPlayer = data.players.find((p) => p.playerId === selectedPlayers[0])
 
   // Calculate trend for selected player
-  const calculateTrend = (player: PlayerEvolution) => {
-    const statValues = player.stats[selectedStat]
-    if (!statValues || statValues.length < 2) return { value: 0, percentage: 0, isPositive: false }
+  const calculateTrend = (player: PlayerEvolution, statKey: string = selectedStat) => {
+    const statValues = player.stats[statKey]
+    if (!statValues || statValues.length < 4) return { value: 0, percentage: 0, isPositive: false }
 
-    const latestStat = statValues[statValues.length - 1].value
-    const previousIndex = Math.max(0, statValues.length - 6)
-    const previousStat = statValues[previousIndex]?.value || latestStat
-    const trend = latestStat - previousStat
-    const trendPercentage = previousStat !== 0 ? (trend / previousStat) * 100 : 0
+    // Usar los últimos 3 partidos para el valor actual
+    const recentGames = statValues.slice(-3)
+    const currentAvg = recentGames.reduce((sum, point) => sum + point.value, 0) / recentGames.length
+
+    // Usar los 3 partidos anteriores para la comparación
+    const previousGames = statValues.slice(-6, -3)
+    // Si no hay suficientes partidos anteriores, usar los primeros disponibles
+    const previousAvg =
+      previousGames.length > 0
+        ? previousGames.reduce((sum, point) => sum + point.value, 0) / previousGames.length
+        : statValues.slice(0, 3).reduce((sum, point) => sum + point.value, 0) /
+          Math.min(3, statValues.slice(0, 3).length)
+
+    // Calcular la diferencia y el porcentaje
+    const trend = currentAvg - previousAvg
+
+    // Evitar divisiones por números muy pequeños
+    let trendPercentage = 0
+    if (Math.abs(previousAvg) > 0.01) {
+      trendPercentage = (trend / previousAvg) * 100
+      // Limitar el porcentaje a un rango razonable
+      trendPercentage = Math.max(Math.min(trendPercentage, 200), -200)
+    } else if (trend > 0) {
+      trendPercentage = 100 // Valor positivo cuando antes era cercano a cero
+    } else if (trend < 0) {
+      trendPercentage = -100 // Valor negativo cuando antes era cercano a cero
+    }
 
     return {
       value: trend,
       percentage: trendPercentage,
       isPositive: trend > 0,
+      player: player,
+      trend: {
+        value: trend,
+        percentage: trendPercentage,
+        isPositive: trend > 0,
+      },
     }
   }
 
@@ -917,30 +1007,11 @@ export default function PlayerEvolution() {
         }`}
       >
         <div className="max-w-6xl mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/" className="mr-4">
-                <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
-              </Link>
-              <div>
-                <div className="flex items-center">
-                  <h1 className="text-4xl md:text-5xl font-bold">Player Evolution</h1>
-                  <div className="ml-4 flex items-center justify-center p-2 rounded-lg bg-white/10">
-                    <TrendingUp className="h-6 w-6" />
-                  </div>
-                </div>
-                <p className="text-blue-100 mt-2">
-                  {data.team} • {data.season} Season
-                </p>
-              </div>
-            </div>
-
-            {statCategory === "advanced" && (
-              <div className="hidden md:flex items-center bg-purple-800/50 px-4 py-2 rounded-lg border border-purple-700/50">
-                <LineChart className="h-5 w-5 text-purple-300 mr-2" />
-                <span className="text-purple-200 font-medium">Advanced Analytics Mode</span>
-              </div>
-            )}
+          <div className="flex items-center">
+            <Link href="/" className="mr-4">
+              <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
+            </Link>
+            <h1 className="text-4xl md:text-5xl font-bold">Evolución del Jugador</h1>
           </div>
         </div>
       </div>
@@ -951,7 +1022,7 @@ export default function PlayerEvolution() {
           <div className="bg-gray-900/50 rounded-t-xl p-1 inline-flex border-b-2 border-indigo-800">
             <button
               onClick={() => setActiveView("individual")}
-              className={`px-8 py-3 rounded-t-lg transition-all ${
+              className={`px-6 py-3 rounded-t-lg transition-all ${
                 activeView === "individual"
                   ? "bg-indigo-900/70 text-white border-t-2 border-l-2 border-r-2 border-indigo-700"
                   : "text-gray-300 hover:bg-gray-800"
@@ -959,12 +1030,12 @@ export default function PlayerEvolution() {
             >
               <div className="flex items-center">
                 <User className="w-5 h-5 mr-2" />
-                <span className="font-medium">Player View</span>
+                <span className="font-medium">Vista Jugador</span>
               </div>
             </button>
             <button
               onClick={() => setActiveView("team")}
-              className={`px-8 py-3 rounded-t-lg transition-all ${
+              className={`px-6 py-3 rounded-t-lg transition-all ${
                 activeView === "team"
                   ? "bg-indigo-900/70 text-white border-t-2 border-l-2 border-r-2 border-indigo-700"
                   : "text-gray-300 hover:bg-gray-800"
@@ -972,59 +1043,56 @@ export default function PlayerEvolution() {
             >
               <div className="flex items-center">
                 <Users className="w-5 h-5 mr-2" />
-                <span className="font-medium">Team Comparison</span>
+                <span className="font-medium">Comparación Equipo</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveView("trends")}
+              className={`px-6 py-3 rounded-t-lg transition-all ${
+                activeView === "trends"
+                  ? "bg-indigo-900/70 text-white border-t-2 border-l-2 border-r-2 border-indigo-700"
+                  : "text-gray-300 hover:bg-gray-800"
+              }`}
+            >
+              <div className="flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2" />
+                <span className="font-medium">Tendencias del Equipo</span>
               </div>
             </button>
           </div>
         </div>
 
-        {/* Stats Category Toggle - Estilo de switch */}
+        {/* Stats Category Toggle */}
         <div className="flex justify-center mb-8">
-          <div className="relative inline-flex items-center bg-gray-800 rounded-full p-1 shadow-inner">
+          <div className="flex bg-gray-900 rounded-xl overflow-hidden w-full max-w-xl">
             <button
               onClick={() => handleStatCategoryChange("simple")}
-              className={`relative z-10 px-6 py-2 rounded-full transition-all ${
-                statCategory === "simple" ? "text-gray-900 font-medium" : "text-gray-400 hover:text-white"
+              className={`flex-1 py-2 px-8 flex items-center justify-center transition-all duration-300 ${
+                statCategory === "simple" ? "bg-gradient-to-r from-green-600 to-blue-600" : "hover:bg-gray-800"
               }`}
             >
-              <div className="flex items-center">
-                <BarChart3
-                  className={`w-4 h-4 mr-2 ${statCategory === "simple" ? "text-gray-900" : "text-gray-400"}`}
-                />
-                <span>Simple Stats</span>
-              </div>
+              <BarChart3 className="mr-3 h-5 w-5" />
+              <span className="text-base">Estadísticas Básicas</span>
             </button>
             <button
               onClick={() => handleStatCategoryChange("advanced")}
-              className={`relative z-10 px-6 py-2 rounded-full transition-all ${
-                statCategory === "advanced" ? "text-gray-900 font-medium" : "text-gray-400 hover:text-white"
+              className={`flex-1 py-2 px-8 flex items-center justify-center transition-all duration-300 ${
+                statCategory === "advanced" ? "bg-gradient-to-r from-blue-600 to-purple-600" : "hover:bg-gray-800"
               }`}
             >
-              <div className="flex items-center">
-                <LineChart
-                  className={`w-4 h-4 mr-2 ${statCategory === "advanced" ? "text-gray-900" : "text-gray-400"}`}
-                />
-                <span>Advanced Stats</span>
-              </div>
+              <LineChart className="mr-3 h-5 w-5" />
+              <span className="text-base">Estadísticas Avanzadas</span>
             </button>
-            {/* Indicador de selección */}
-            <div
-              className={`absolute top-1 bottom-1 transition-all duration-300 ease-in-out rounded-full bg-gradient-to-r ${
-                statCategory === "simple"
-                  ? "left-1 right-[50%] from-blue-400 to-indigo-400"
-                  : "left-[50%] right-1 from-purple-400 to-pink-400"
-              }`}
-            ></div>
           </div>
         </div>
 
-        {activeView === "individual" ? (
+        {activeView === "individual" && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Sidebar */}
             <div className="lg:col-span-4">
               <div className="bg-gray-800 rounded-xl overflow-hidden shadow-lg">
                 <div className="p-4 border-b border-gray-700">
-                  <h2 className="text-xl font-bold">Select Player</h2>
+                  <h2 className="text-xl font-bold">Seleccionar Jugador</h2>
                 </div>
 
                 <div className="p-4">
@@ -1032,7 +1100,7 @@ export default function PlayerEvolution() {
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="text"
-                      placeholder="Search players..."
+                      placeholder="Buscar jugadores..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1063,7 +1131,9 @@ export default function PlayerEvolution() {
                           </div>
                           <div className="text-left">
                             <div className="font-medium">{player.playerName}</div>
-                            <div className="text-xs text-gray-400">{player.stats[selectedStat]?.length || 0} games</div>
+                            <div className="text-xs text-gray-400">
+                              {player.stats[selectedStat]?.length || 0} partidos
+                            </div>
                           </div>
                         </div>
                       )
@@ -1072,7 +1142,7 @@ export default function PlayerEvolution() {
                 </div>
 
                 <div className="p-4 border-t border-gray-700">
-                  <h3 className="text-lg font-semibold mb-3">Statistics</h3>
+                  <h3 className="text-lg font-semibold mb-3">Estadísticas</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {getStatsByCategory(statCategory)
                       .slice(0, 6)
@@ -1106,7 +1176,7 @@ export default function PlayerEvolution() {
                   </div>
 
                   <div className="mt-4">
-                    <h3 className="text-lg font-semibold mb-3">Time Range</h3>
+                    <h3 className="text-lg font-semibold mb-3">Rango de Tiempo</h3>
                     <div className="flex gap-2">
                       {timeRangeOptions.map((option) => (
                         <button
@@ -1146,7 +1216,7 @@ export default function PlayerEvolution() {
                       <div>
                         <h2 className="text-2xl font-bold">{selectedPlayer.playerName}</h2>
                         <p className="text-gray-400">
-                          {selectedPlayer.stats[selectedStat]?.length || 0} games analyzed
+                          {selectedPlayer.stats[selectedStat]?.length || 0} partidos analizados
                         </p>
                       </div>
 
@@ -1179,7 +1249,7 @@ export default function PlayerEvolution() {
                                   </span>
                                   <span className="text-sm ml-1">
                                     ({trend.percentage > 0 ? "+" : ""}
-                                    {trend.percentage.toFixed(1)}%)
+                                    {Math.round(trend.percentage)}%)
                                   </span>
                                 </div>
                               </div>
@@ -1205,16 +1275,16 @@ export default function PlayerEvolution() {
                             statCategory === "advanced" ? "text-purple-500" : "text-indigo-500"
                           }`}
                         />
-                        {currentStat.label} Evolution
+                        Evolución de {currentStat.label}
                       </h2>
                       <div className="flex items-center text-sm text-gray-400">
                         <Calendar className="mr-1 h-4 w-4" />
-                        {timeRangeOptions.find((option) => option.key === timeRange)?.label || "Custom Range"}
+                        {timeRangeOptions.find((option) => option.key === timeRange)?.label || "Rango Personalizado"}
                       </div>
                     </div>
 
                     <div className="p-4">
-                      <div className="h-[400px] relative">
+                      <div className="h-[500px] relative">
                         <canvas
                           ref={chartRef}
                           className="w-full h-full cursor-pointer"
@@ -1222,7 +1292,7 @@ export default function PlayerEvolution() {
                           onMouseLeave={handleChartMouseLeave}
                         />
                         <div className="text-xs text-gray-400 mt-2 text-center">
-                          Hover over the chart to see detailed values
+                          Pasa el cursor sobre el gráfico para ver valores detallados
                         </div>
                       </div>
                     </div>
@@ -1231,7 +1301,7 @@ export default function PlayerEvolution() {
                   {/* Stats Summary */}
                   <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
                     <h3 className="text-xl font-bold mb-4">
-                      {statCategory === "simple" ? "Simple Statistics" : "Advanced Metrics"}
+                      {statCategory === "simple" ? "Estadísticas Básicas" : "Métricas Avanzadas"}
                     </h3>
 
                     {statCategory === "simple" ? (
@@ -1253,7 +1323,7 @@ export default function PlayerEvolution() {
                                 <div className="text-2xl font-bold" style={{ color: stat.color }}>
                                   {formatStatValue(latestValue)}
                                 </div>
-                                <div className="text-xs text-gray-400 mt-1">Avg: {formatStatValue(avgValue)}</div>
+                                <div className="text-xs text-gray-400 mt-1">Prom: {formatStatValue(avgValue)}</div>
                               </div>
                             )
                           })}
@@ -1261,32 +1331,32 @@ export default function PlayerEvolution() {
                     ) : (
                       <div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-                          {/* PER Card */}
+                          {/* Rating Ofensivo Card */}
                           <div className="bg-gradient-to-br from-cyan-900/40 to-cyan-800/20 rounded-xl p-4 border border-cyan-800/30">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <h4 className="text-sm text-gray-400">Player Efficiency Rating</h4>
+                                <h4 className="text-sm text-gray-400">Rating Ofensivo</h4>
                                 <p className="text-3xl font-bold text-cyan-400">
-                                  {selectedPlayer.stats["PER"]?.[selectedPlayer.stats["PER"].length - 1]?.value.toFixed(
-                                    1,
-                                  ) || "N/A"}
+                                  {selectedPlayer.stats["OffRtg"]?.[
+                                    selectedPlayer.stats["OffRtg"].length - 1
+                                  ]?.value.toFixed(1) || "N/A"}
                                 </p>
                               </div>
                               <div className="bg-cyan-900/50 p-2 rounded-lg">
                                 <TrendingUp className="h-5 w-5 text-cyan-400" />
                               </div>
                             </div>
-                            <p className="text-xs text-gray-400">Measures a player's per-minute productivity</p>
+                            <p className="text-xs text-gray-400">Puntos por 100 posesiones</p>
                           </div>
 
-                          {/* TS% Card */}
+                          {/* TS Card */}
                           <div className="bg-gradient-to-br from-violet-900/40 to-violet-800/20 rounded-xl p-4 border border-violet-800/30">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <h4 className="text-sm text-gray-400">True Shooting %</h4>
+                                <h4 className="text-sm text-gray-400">% Tiro Efectivo</h4>
                                 <p className="text-3xl font-bold text-violet-400">
-                                  {selectedPlayer.stats["TS_PCT"]?.[selectedPlayer.stats["TS_PCT"].length - 1]?.value
-                                    ? `${(selectedPlayer.stats["TS_PCT"][selectedPlayer.stats["TS_PCT"].length - 1].value * 100).toFixed(1)}%`
+                                  {selectedPlayer.stats["TS"]?.[selectedPlayer.stats["TS"].length - 1]?.value
+                                    ? `${(selectedPlayer.stats["TS"][selectedPlayer.stats["TS"].length - 1].value * 100).toFixed(1)}%`
                                     : "N/A"}
                                 </p>
                               </div>
@@ -1294,17 +1364,17 @@ export default function PlayerEvolution() {
                                 <TrendingUp className="h-5 w-5 text-violet-400" />
                               </div>
                             </div>
-                            <p className="text-xs text-gray-400">Shooting efficiency accounting for FG, 3PT, and FT</p>
+                            <p className="text-xs text-gray-400">Eficiencia de tiro considerando FG, 3PT y TL</p>
                           </div>
 
-                          {/* USG% Card */}
+                          {/* USG Card */}
                           <div className="bg-gradient-to-br from-pink-900/40 to-pink-800/20 rounded-xl p-4 border border-pink-800/30">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <h4 className="text-sm text-gray-400">Usage Rate</h4>
+                                <h4 className="text-sm text-gray-400">% de Uso</h4>
                                 <p className="text-3xl font-bold text-pink-400">
-                                  {selectedPlayer.stats["USG_PCT"]?.[selectedPlayer.stats["USG_PCT"].length - 1]?.value
-                                    ? `${(selectedPlayer.stats["USG_PCT"][selectedPlayer.stats["USG_PCT"].length - 1].value * 100).toFixed(1)}%`
+                                  {selectedPlayer.stats["USG"]?.[selectedPlayer.stats["USG"].length - 1]?.value
+                                    ? `${(selectedPlayer.stats["USG"][selectedPlayer.stats["USG"].length - 1].value * 100).toFixed(1)}%`
                                     : "N/A"}
                                 </p>
                               </div>
@@ -1312,52 +1382,90 @@ export default function PlayerEvolution() {
                                 <TrendingUp className="h-5 w-5 text-pink-400" />
                               </div>
                             </div>
-                            <p className="text-xs text-gray-400">Percentage of team plays used by a player</p>
+                            <p className="text-xs text-gray-400">
+                              Porcentaje de jugadas del equipo usadas por el jugador
+                            </p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                          {getStatsByCategory("advanced")
-                            .filter((stat) => !["PER", "TS_PCT", "USG_PCT"].includes(stat.key))
-                            .map((stat) => {
-                              const values = selectedPlayer.stats[stat.key]
-                              if (!values || values.length === 0) return null
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {/* eFG Card */}
+                          <div className="bg-gradient-to-br from-blue-900/40 to-blue-800/20 rounded-xl p-4 border border-blue-800/30">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="text-sm text-gray-400">% Tiro Efectivo de Campo</h4>
+                                <p className="text-2xl font-bold text-blue-400">
+                                  {selectedPlayer.stats["eFG"]?.[selectedPlayer.stats["eFG"].length - 1]?.value
+                                    ? `${(selectedPlayer.stats["eFG"][selectedPlayer.stats["eFG"].length - 1].value * 100).toFixed(1)}%`
+                                    : "N/A"}
+                                </p>
+                              </div>
+                              <div className="bg-blue-900/50 p-2 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-blue-400" />
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-400">
+                              Eficiencia de tiro considerando el valor de los triples
+                            </p>
+                          </div>
 
-                              const latestValue = values[values.length - 1].value
-                              const formattedValue = ["EFG_PCT", "TS_PCT", "USG_PCT", "PIE"].includes(stat.key)
-                                ? `${(latestValue * 100).toFixed(1)}%`
-                                : latestValue.toFixed(1)
+                          {/* ASTtoTO Card */}
+                          <div className="bg-gradient-to-br from-green-900/40 to-green-800/20 rounded-xl p-4 border border-green-800/30">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="text-sm text-gray-400">Ratio AST/TO</h4>
+                                <p className="text-2xl font-bold text-green-400">
+                                  {selectedPlayer.stats["ASTtoTO"]?.[
+                                    selectedPlayer.stats["ASTtoTO"].length - 1
+                                  ]?.value.toFixed(2) || "N/A"}
+                                </p>
+                              </div>
+                              <div className="bg-green-900/50 p-2 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-green-400" />
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-400">Ratio de Asistencias a Pérdidas</p>
+                          </div>
 
-                              return (
-                                <div key={stat.key} className="bg-gray-700 rounded-lg p-3">
-                                  <div className="text-sm text-gray-400">{stat.label}</div>
-                                  <div className="text-xl font-bold mt-1" style={{ color: stat.color }}>
-                                    {formattedValue}
-                                  </div>
-                                  <div className="text-xs text-gray-400 mt-1">{stat.description}</div>
-                                </div>
-                              )
-                            })}
+                          {/* TOVpercent Card */}
+                          <div className="bg-gradient-to-br from-amber-900/40 to-amber-800/20 rounded-xl p-4 border border-amber-800/30">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="text-sm text-gray-400">% Pérdidas</h4>
+                                <p className="text-2xl font-bold text-amber-400">
+                                  {selectedPlayer.stats["TOVpercent"]?.[
+                                    selectedPlayer.stats["TOVpercent"].length - 1
+                                  ]?.value.toFixed(1) || "N/A"}
+                                  %
+                                </p>
+                              </div>
+                              <div className="bg-amber-900/50 p-2 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-amber-400" />
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-400">Porcentaje de posesiones que terminan en pérdida</p>
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
                 </>
               ) : (
-                <div className="bg-gray-800 rounded-xl p-6 shadow-lg flex items-center justify-center h-[400px]">
-                  <p className="text-gray-400 text-lg">Select a player to view their statistics</p>
+                <div className="bg-gray-800 rounded-xl p-6 shadow-lg flex items-center justify-center h-[500px]">
+                  <p className="text-gray-400 text-lg">Selecciona un jugador para ver sus estadísticas</p>
                 </div>
               )}
             </div>
           </div>
-        ) : (
-          /* Team Comparison View */
+        )}
+
+        {activeView === "team" && (
           <div>
             <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold mb-2">Team Comparison</h2>
-                  <p className="text-gray-400">Compare top players' {currentStat.label} evolution</p>
+                  <h2 className="text-2xl font-bold mb-2">Comparación de Equipo</h2>
+                  <p className="text-gray-400">Compara la evolución de {currentStat.label} de los mejores jugadores</p>
                 </div>
 
                 <div className="mt-4 md:mt-0 flex gap-4">
@@ -1375,7 +1483,7 @@ export default function PlayerEvolution() {
                 </div>
               </div>
 
-              <div className="h-[500px] relative">
+              <div className="h-[600px] relative">
                 <canvas
                   ref={teamChartRef}
                   className="w-full h-full cursor-pointer"
@@ -1383,14 +1491,14 @@ export default function PlayerEvolution() {
                   onMouseLeave={handleTeamChartMouseLeave}
                 />
                 <div className="text-xs text-gray-400 mt-2 text-center">
-                  Hover over the chart to see detailed values
+                  Pasa el cursor sobre el gráfico para ver valores detallados
                 </div>
               </div>
             </div>
 
             {/* Top Performers */}
             <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-bold mb-4">Top Performers - {currentStat.label}</h3>
+              <h3 className="text-xl font-bold mb-4">Mejores Jugadores - {currentStat.label}</h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {data.players
@@ -1427,7 +1535,7 @@ export default function PlayerEvolution() {
                         </div>
                         <div className="flex-grow">
                           <div className="font-medium">{player.playerName}</div>
-                          <div className="text-xs text-gray-400">Rank #{index + 1}</div>
+                          <div className="text-xs text-gray-400">Puesto #{index + 1}</div>
                         </div>
                         <div className="text-right">
                           <div
@@ -1453,24 +1561,349 @@ export default function PlayerEvolution() {
           </div>
         )}
 
+        {activeView === "trends" && (
+          <div>
+            <div className="bg-gray-800 rounded-xl p-6 shadow-lg mb-8">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Tendencias del Equipo</h2>
+                  <p className="text-gray-400">
+                    Jugadores ordenados por mejora en {currentStat.label} (últimos 6 partidos)
+                  </p>
+                </div>
+
+                <div className="mt-4 md:mt-0 flex gap-4">
+                  <select
+                    value={selectedStat}
+                    onChange={(e) => setSelectedStat(e.target.value)}
+                    className="bg-gray-700 border border-gray-600 rounded-lg py-2 px-4 text-white appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {getStatsByCategory(statCategory).map((stat) => (
+                      <option key={stat.key} value={stat.key}>
+                        {stat.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Tendencias de Mejora */}
+              <div className="mb-8">
+                <h3 className="text-xl font-semibold mb-4 text-green-400 flex items-center">
+                  <ArrowUpRight className="mr-2 h-5 w-5" />
+                  Jugadores en Mejora
+                </h3>
+                <div className="space-y-4">
+                  {data.players
+                    .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
+                    .map((player) => calculateTrend(player))
+                    .filter((result) => result.player && result.trend.isPositive)
+                    .sort((a, b) => b.trend.percentage - a.trend.percentage)
+                    .slice(0, 5)
+                    .map((result) => (
+                      <div
+                        key={result.player.playerId}
+                        className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedPlayers([result.player.playerId])
+                          setActiveView("individual")
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 mr-4">
+                            <Image
+                              src={result.player.image || "/placeholder.svg?height=48&width=48"}
+                              alt={result.player.playerName}
+                              width={48}
+                              height={48}
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <div className="font-medium text-lg">{result.player.playerName}</div>
+                            <div className="text-sm text-gray-400">
+                              {result.player.stats[selectedStat].length} partidos analizados
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-400">
+                              +{formatStatValue(result.trend.value)}
+                            </div>
+                            <div className="text-sm text-green-300">+{Math.round(result.trend.percentage)}%</div>
+                          </div>
+                        </div>
+                        {/* Barra de progreso */}
+                        <div className="mt-3 bg-gray-800 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-green-500 to-green-300 h-full"
+                            style={{ width: `${Math.min(100, result.trend.percentage)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  {data.players
+                    .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
+                    .map((player) => calculateTrend(player))
+                    .filter((result) => result.player && result.trend.isPositive).length === 0 && (
+                    <div className="text-center py-6 text-gray-400">
+                      No hay jugadores con tendencia positiva en esta estadística
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Tendencias de Declive */}
+              <div>
+                <h3 className="text-xl font-semibold mb-4 text-red-400 flex items-center">
+                  <ArrowDownRight className="mr-2 h-5 w-5" />
+                  Jugadores en Declive
+                </h3>
+                <div className="space-y-4">
+                  {data.players
+                    .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
+                    .map((player) => calculateTrend(player))
+                    .filter((result) => result.player && !result.trend.isPositive && result.trend.value !== 0)
+                    .sort((a, b) => a.trend.percentage - b.trend.percentage)
+                    .slice(0, 5)
+                    .map((result) => (
+                      <div
+                        key={result.player.playerId}
+                        className="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedPlayers([result.player.playerId])
+                          setActiveView("individual")
+                        }}
+                      >
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 mr-4">
+                            <Image
+                              src={result.player.image || "/placeholder.svg?height=48&width=48"}
+                              alt={result.player.playerName}
+                              width={48}
+                              height={48}
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <div className="font-medium text-lg">{result.player.playerName}</div>
+                            <div className="text-sm text-gray-400">
+                              {result.player.stats[selectedStat].length} partidos analizados
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-red-400">{formatStatValue(result.trend.value)}</div>
+                            <div className="text-sm text-red-300">{Math.round(result.trend.percentage)}%</div>
+                          </div>
+                        </div>
+                        {/* Barra de progreso */}
+                        <div className="mt-3 bg-gray-800 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-red-500 to-red-300 h-full"
+                            style={{ width: `${Math.min(100, Math.abs(result.trend.percentage))}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  {data.players
+                    .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
+                    .map((player) => calculateTrend(player))
+                    .filter((result) => result.player && !result.trend.isPositive && result.trend.value !== 0)
+                    .length === 0 && (
+                    <div className="text-center py-6 text-gray-400">
+                      No hay jugadores con tendencia negativa en esta estadística
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Resumen de Tendencias */}
+            <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-bold mb-4">Resumen de Tendencias</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl p-4">
+                  <h4 className="text-lg font-semibold mb-3 text-blue-400">Estadísticas con Mayor Mejora</h4>
+                  <div className="space-y-3">
+                    {statOptions
+                      .filter((stat) => {
+                        // Contar cuántos jugadores tienen tendencia positiva en esta estadística
+                        const playersWithPositiveTrend = data.players
+                          .filter((player) => player.stats[stat.key] && player.stats[stat.key].length >= 4)
+                          .map((player) => {
+                            const statValues = player.stats[stat.key]
+                            if (!statValues || statValues.length < 4) return { isPositive: false, percentage: 0 }
+
+                            const recentGames = statValues.slice(-3)
+                            const currentAvg =
+                              recentGames.reduce((sum, point) => sum + point.value, 0) / recentGames.length
+
+                            const previousGames = statValues.slice(-6, -3)
+                            const previousAvg =
+                              previousGames.length > 0
+                                ? previousGames.reduce((sum, point) => sum + point.value, 0) / previousGames.length
+                                : statValues.slice(0, 3).reduce((sum, point) => sum + point.value, 0) /
+                                  Math.min(3, statValues.slice(0, 3).length)
+
+                            const trend = currentAvg - previousAvg
+                            return {
+                              isPositive: trend > 0,
+                              percentage: previousAvg !== 0 ? (trend / previousAvg) * 100 : 0,
+                            }
+                          })
+                          .filter((trend) => trend.isPositive)
+
+                        return playersWithPositiveTrend.length > 0
+                      })
+                      .sort((a, b) => {
+                        // Calcular el promedio de mejora para cada estadística
+                        const avgImprovementA = data.players
+                          .filter((player) => player.stats[a.key] && player.stats[a.key].length >= 4)
+                          .map((player) => {
+                            const trend = calculateTrend(player, a.key)
+                            return trend.trend.isPositive ? trend.trend.percentage : 0
+                          })
+                          .reduce((sum, percentage, _, arr) => sum + percentage / arr.length, 0)
+
+                        const avgImprovementB = data.players
+                          .filter((player) => player.stats[b.key] && player.stats[b.key].length >= 4)
+                          .map((player) => {
+                            const trend = calculateTrend(player, b.key)
+                            return trend.trend.isPositive ? trend.trend.percentage : 0
+                          })
+                          .reduce((sum, percentage, _, arr) => sum + percentage / arr.length, 0)
+
+                        return avgImprovementB - avgImprovementA
+                      })
+                      .slice(0, 4)
+                      .map((stat) => {
+                        const avgImprovement = data.players
+                          .filter((player) => player.stats[stat.key] && player.stats[stat.key].length >= 4)
+                          .map((player) => {
+                            const trend = calculateTrend(player, stat.key)
+                            return trend.trend.isPositive ? trend.trend.percentage : 0
+                          })
+                          .reduce((sum, percentage, _, arr) => sum + percentage / arr.length, 0)
+
+                        return (
+                          <div key={stat.key} className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: stat.color }}></div>
+                              <span>{stat.label}</span>
+                            </div>
+                            <div className="font-semibold text-blue-300">+{Math.round(avgImprovement)}%</div>
+                          </div>
+                        )
+                      })}
+                    {statOptions.filter((stat) => {
+                      const playersWithPositiveTrend = data.players
+                        .filter((player) => player.stats[stat.key] && player.stats[stat.key].length >= 4)
+                        .map((player) => {
+                          const trend = calculateTrend(player, stat.key)
+                          return trend.trend.isPositive
+                        })
+                        .filter(Boolean)
+
+                      return playersWithPositiveTrend.length > 0
+                    }).length === 0 && (
+                      <div className="text-center py-3 text-gray-400">
+                        No hay suficientes datos para mostrar tendencias
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-xl p-4">
+                  <h4 className="text-lg font-semibold mb-3 text-purple-400">Jugadores Más Consistentes</h4>
+                  <div className="space-y-3">
+                    {data.players
+                      .filter((player) => {
+                        // Verificar si el jugador tiene suficientes datos para todas las estadísticas principales
+                        const mainStats = ["PTS", "AST", "REB"]
+                        return mainStats.every((stat) => player.stats[stat] && player.stats[stat].length >= 4)
+                      })
+                      .map((player) => {
+                        // Calcular la consistencia basada en la desviación estándar de las estadísticas principales
+                        const consistencyScore =
+                          ["PTS", "AST", "REB"]
+                            .map((stat) => {
+                              const values = player.stats[stat].slice(-6).map((p) => p.value)
+                              const mean = values.reduce((sum, val) => sum + val, 0) / values.length
+                              const variance =
+                                values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length
+                              const stdDev = Math.sqrt(variance)
+                              // Menor desviación estándar = mayor consistencia
+                              return stdDev / mean // Coeficiente de variación
+                            })
+                            .reduce((sum, cv) => sum + cv, 0) / 3 // Promedio de coeficientes de variación
+
+                        return {
+                          player,
+                          consistencyScore: 1 - Math.min(consistencyScore, 1), // Invertir para que mayor valor = más consistente
+                        }
+                      })
+                      .sort((a, b) => b.consistencyScore - a.consistencyScore)
+                      .slice(0, 5)
+                      .map(({ player, consistencyScore }) => (
+                        <div
+                          key={player.playerId}
+                          className="flex items-center justify-between cursor-pointer hover:bg-gray-600/30 p-2 rounded-lg"
+                          onClick={() => {
+                            setSelectedPlayers([player.playerId])
+                            setActiveView("individual")
+                          }}
+                        >
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-600 mr-2">
+                              <Image
+                                src={player.image || "/placeholder.svg?height=32&width=32"}
+                                alt={player.playerName}
+                                width={32}
+                                height={32}
+                                className="object-cover"
+                              />
+                            </div>
+                            <span>{player.playerName}</span>
+                          </div>
+                          <div className="font-semibold text-purple-300">{Math.round(consistencyScore * 100)}%</div>
+                        </div>
+                      ))}
+                    {data.players.filter((player) => {
+                      const mainStats = ["PTS", "AST", "REB"]
+                      return mainStats.every((stat) => player.stats[stat] && player.stats[stat].length >= 4)
+                    }).length === 0 && (
+                      <div className="text-center py-3 text-gray-400">
+                        No hay suficientes datos para mostrar consistencia
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Explanation Section */}
         <div className="mt-12 bg-indigo-900/20 border border-indigo-800/30 rounded-xl p-6 shadow-lg">
           <div className="flex items-center mb-4">
             <Info className="h-5 w-5 text-indigo-400 mr-2" />
-            <h2 className="text-xl font-bold">About This Analysis</h2>
+            <h2 className="text-xl font-bold">Acerca de Este Análisis</h2>
           </div>
 
           <p className="text-gray-300 mb-4">
-            This analysis tracks the evolution of player statistics over time, allowing you to visualize performance
-            trends throughout the season. The chart displays how selected statistics change from game to game.
+            Este análisis hace un seguimiento de la evolución de las estadísticas de los jugadores a lo largo del
+            tiempo, permitiéndote visualizar las tendencias de rendimiento durante la temporada. El gráfico muestra cómo
+            cambian las estadísticas seleccionadas de partido a partido.
           </p>
 
           <div className="text-sm text-gray-400">
-            <p>• Upward trends indicate improving performance</p>
-            <p>• Downward trends may signal fatigue or other issues</p>
-            <p>• Compare players to identify consistent performers</p>
-            <p>• Advanced stats provide deeper insights into player efficiency and impact</p>
-            <p>• Hover over charts to see detailed values at specific points</p>
+            <p>• Las tendencias ascendentes indican mejora en el rendimiento</p>
+            <p>• Las tendencias descendentes pueden señalar fatiga u otros problemas</p>
+            <p>• Compara jugadores para identificar a los más consistentes</p>
+            <p>
+              • Las estadísticas avanzadas proporcionan información más profunda sobre la eficiencia e impacto del
+              jugador
+            </p>
+            <p>• Pasa el cursor sobre los gráficos para ver valores detallados en puntos específicos</p>
           </div>
         </div>
       </div>
@@ -1478,7 +1911,7 @@ export default function PlayerEvolution() {
       {/* Footer */}
       <footer className="w-full bg-gray-900 py-4 mt-auto">
         <div className="max-w-6xl mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
+          <p>© {new Date().getFullYear()} Análisis de Baloncesto. TFG Guillermo</p>
         </div>
       </footer>
     </div>

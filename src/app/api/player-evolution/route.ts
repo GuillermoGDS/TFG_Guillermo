@@ -21,9 +21,9 @@ interface PlayerEvolution {
   }
 }
 
-// Define basic and advanced stats
+// Modificar la definición de ADVANCED_STATS para que coincida con las estadísticas de player-rankings
 const BASIC_STATS = ["PTS", "AST", "REB", "STL", "BLK", "TOV", "FG_PCT", "FG3_PCT", "FT_PCT", "PLUS_MINUS", "MIN"]
-const ADVANCED_STATS = ["PER", "TS_PCT", "EFG_PCT", "USG_PCT", "PIE", "NETRTG", "AST_TO", "REB_PG", "STL_BLK"]
+const ADVANCED_STATS = ["OffRtg", "TS", "eFG", "ASTtoTO", "TOVpercent", "USG"]
 
 export async function GET(req: Request): Promise<NextResponse> {
   try {
@@ -125,87 +125,57 @@ export async function GET(req: Request): Promise<NextResponse> {
 
           // Calculate and add advanced stats
 
-          // 1. Player Efficiency Rating (PER) - simplified calculation
-          const per =
-            (((game.PTS || 0) +
-              (game.REB || 0) * 1.2 +
-              (game.AST || 0) * 1.5 +
-              (game.STL || 0) * 2 +
-              (game.BLK || 0) * 2 -
-              (game.TOV || 0) * 1.5 -
-              ((game.FGA || 0) - (game.FGM || 0)) * 0.5 -
-              ((game.FTA || 0) - (game.FTM || 0)) * 0.5) /
-              Math.max(game.MIN || 1, 1)) *
-            10
+          // Calcular posesiones para este juego
+          const possessions = (game.FGA || 0) + 0.44 * (game.FTA || 0) + (game.TOV || 0)
 
-          stats["PER"].push({
+          // 1. Offensive Rating (OffRtg)
+          const ptsGenerated =
+            (game.PTS || 0) + (game.AST || 0) * (2 * (1 - (game.FG3_PCT || 0)) + 3 * (game.FG3_PCT || 0))
+          const offRtg = possessions > 0 ? (ptsGenerated / possessions) * 100 : 0
+          stats["OffRtg"].push({
             date,
-            value: isFinite(per) ? per : 0,
+            value: isFinite(offRtg) ? offRtg : 0,
           })
 
-          // 2. True Shooting Percentage (TS%)
-          const tsPct = (game.PTS || 0) / (2 * ((game.FGA || 0) + 0.44 * (game.FTA || 0)))
-          stats["TS_PCT"].push({
+          // 2. True Shooting (TS)
+          const ts =
+            (game.FGA || 0) + 0.44 * (game.FTA || 0) > 0
+              ? (game.PTS || 0) / (2 * ((game.FGA || 0) + 0.44 * (game.FTA || 0)))
+              : 0
+          stats["TS"].push({
             date,
-            value: isFinite(tsPct) && tsPct >= 0 ? Math.min(tsPct, 1) : 0,
+            value: isFinite(ts) && ts >= 0 ? Math.min(ts, 1) : 0,
           })
 
-          // 3. Effective Field Goal Percentage (eFG%)
-          const efgPct = ((game.FGM || 0) + 0.5 * (game.FG3M || 0)) / Math.max(game.FGA || 0, 1)
-          stats["EFG_PCT"].push({
+          // 3. Effective Field Goal Percentage (eFG)
+          const efg = (game.FGA || 0) > 0 ? ((game.FGM || 0) + 0.5 * (game.FG3M || 0)) / (game.FGA || 0) : 0
+          stats["eFG"].push({
             date,
-            value: isFinite(efgPct) && efgPct >= 0 ? Math.min(efgPct, 1) : 0,
+            value: isFinite(efg) && efg >= 0 ? Math.min(efg, 1) : 0,
           })
 
-          // 4. Usage Rate (USG%) - simplified
-          const usgPct = ((game.FGA || 0) + 0.44 * (game.FTA || 0) + (game.TOV || 0)) / Math.max(game.MIN || 1, 1) / 5
-          stats["USG_PCT"].push({
+          // 4. Assist to Turnover Ratio (ASTtoTO)
+          const astToTo = (game.TOV || 0) > 0 ? (game.AST || 0) / (game.TOV || 0) : 0
+          stats["ASTtoTO"].push({
             date,
-            value: isFinite(usgPct) && usgPct >= 0 ? Math.min(usgPct, 1) : 0,
+            value: isFinite(astToTo) ? Math.min(astToTo, 10) : 0, // Cap at 10 for visualization
           })
 
-          // 5. Player Impact Estimate (PIE) - simplified
-          const pie =
-            ((game.PTS || 0) +
-              (game.REB || 0) +
-              (game.AST || 0) +
-              (game.STL || 0) +
-              (game.BLK || 0) -
-              ((game.FGA || 0) - (game.FGM || 0)) -
-              ((game.FTA || 0) - (game.FTM || 0)) -
-              (game.TOV || 0)) /
-            100
-
-          stats["PIE"].push({
+          // 5. Turnover Percentage (TOVpercent)
+          const tovPercent = possessions > 0 ? ((game.TOV || 0) / possessions) * 100 : 0
+          stats["TOVpercent"].push({
             date,
-            value: isFinite(pie) ? Math.min(Math.max(pie, 0), 1) : 0,
+            value: isFinite(tovPercent) && tovPercent >= 0 ? tovPercent : 0,
           })
 
-          // 6. Net Rating (using PLUS_MINUS as a proxy)
-          stats["NETRTG"].push({
+          // 6. Usage Rate (USG)
+          const usg =
+            (game.MIN || 0) > 0
+              ? (((game.FGA || 0) + 0.44 * (game.FTA || 0) + (game.TOV || 0)) * 100) / ((game.MIN || 0) * 100)
+              : 0
+          stats["USG"].push({
             date,
-            value: game.PLUS_MINUS || 0,
-          })
-
-          // 7. Assist to Turnover Ratio
-          const astTo = (game.AST || 0) / Math.max(game.TOV || 1, 1)
-          stats["AST_TO"].push({
-            date,
-            value: isFinite(astTo) ? Math.min(astTo, 10) : 0, // Cap at 10 for visualization
-          })
-
-          // 8. Rebounds per Game (normalized by minutes)
-          const rebPerGame = ((game.REB || 0) / Math.max(game.MIN || 1, 1)) * 36 // Normalize to 36 minutes
-          stats["REB_PG"].push({
-            date,
-            value: isFinite(rebPerGame) ? rebPerGame : 0,
-          })
-
-          // 9. Steals + Blocks (defensive activity)
-          const stlBlk = (game.STL || 0) + (game.BLK || 0)
-          stats["STL_BLK"].push({
-            date,
-            value: stlBlk,
+            value: isFinite(usg) && usg >= 0 ? Math.min(usg, 1) : 0,
           })
         })
 

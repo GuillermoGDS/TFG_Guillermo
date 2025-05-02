@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, ChevronRight, Medal, TrendingUp, Loader2, BarChart, Activity } from "lucide-react"
+import { ChevronRight, Medal, TrendingUp, Loader2, BarChart, Activity, ArrowLeft } from "lucide-react"
 
 interface Player {
   rank: number
@@ -100,7 +100,7 @@ export default function PlayerRankings() {
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <Loader2 className="w-16 h-16 text-blue-600 animate-spin mb-4" />
-          <h1 className="text-2xl font-semibold">Loading rankings...</h1>
+          <h1 className="text-2xl font-semibold">Cargando rankings...</h1>
         </div>
       </div>
     )
@@ -113,10 +113,10 @@ export default function PlayerRankings() {
           <div className="bg-red-500/20 p-4 rounded-full mb-4">
             <TrendingUp className="w-16 h-16 text-red-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">Error Loading Rankings</h1>
+          <h1 className="text-2xl font-semibold mb-4">Error al Cargar Rankings</h1>
           <p className="text-gray-400 mb-6">{error}</p>
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -130,10 +130,10 @@ export default function PlayerRankings() {
           <div className="bg-yellow-500/20 p-4 rounded-full mb-4">
             <TrendingUp className="w-16 h-16 text-yellow-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">No Data Available</h1>
-          <p className="text-gray-400 mb-6">No player rankings data is currently available.</p>
+          <h1 className="text-2xl font-semibold mb-4">No Hay Datos Disponibles</h1>
+          <p className="text-gray-400 mb-6">No hay datos de rankings de jugadores disponibles actualmente.</p>
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -175,19 +175,12 @@ export default function PlayerRankings() {
       {/* Header Banner */}
       <div className={`w-full bg-gradient-to-r ${theme.gradient} py-8 mb-6 transition-colors duration-500`}>
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center">
-            <Link href="/" className="mr-4">
-              <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
+          <div className="flex items-center justify-between">
+            <Link href="/" className="flex items-center text-white hover:text-white/80 transition-colors">
+              <ArrowLeft className="h-6 w-6" />
             </Link>
-            <div>
-              <div className="flex items-center">
-                <h1 className="text-4xl md:text-5xl font-bold">Player Rankings</h1>
-                <div className="ml-4 flex items-center justify-center p-2 rounded-lg bg-white/10">{theme.icon}</div>
-              </div>
-              <p className="text-blue-100 mt-2">
-                {data.team} • {data.season} Season
-              </p>
-            </div>
+            <h1 className="text-4xl md:text-5xl font-bold">Rankings de Jugadores</h1>
+            <div className="w-24"></div> {/* Espaciador para mantener el título centrado */}
           </div>
         </div>
       </div>
@@ -204,7 +197,7 @@ export default function PlayerRankings() {
                   : "text-gray-300 hover:bg-gray-700"
               }`}
             >
-              Simple Stats
+              Estadísticas Básicas
             </button>
             <button
               onClick={() => handleTabChange("advanced")}
@@ -214,7 +207,7 @@ export default function PlayerRankings() {
                   : "text-gray-300 hover:bg-gray-700"
               }`}
             >
-              Advanced Stats
+              Estadísticas Avanzadas
             </button>
           </div>
         </div>
@@ -222,7 +215,7 @@ export default function PlayerRankings() {
         {/* Stat Selector */}
         <div className="mb-8">
           <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">Select Statistic</h2>
+            <h2 className="text-3xl font-bold">Seleccionar Estadística</h2>
             <div className={`ml-4 h-1 flex-grow ${theme.accentColor} rounded-full`}></div>
           </div>
 
@@ -247,7 +240,7 @@ export default function PlayerRankings() {
         {currentRankings && (
           <div className="mb-16">
             <div className="flex items-center mb-6">
-              <h2 className="text-3xl font-bold">{currentRankings.label} Rankings</h2>
+              <h2 className="text-3xl font-bold">{currentRankings.label} Clasificación</h2>
               <div className={`ml-4 h-1 flex-grow ${theme.accentColor} rounded-full`}></div>
             </div>
 
@@ -256,7 +249,8 @@ export default function PlayerRankings() {
               <div className={`bg-gradient-to-r ${theme.cardGradient} p-6 md:p-10`}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {currentRankings.players.slice(0, 3).map((player) => (
-                    <div
+                    <Link
+                      href={`/players/${player.playerId}`}
                       key={player.playerId}
                       className={`flex flex-col items-center ${
                         player.rank === 1
@@ -270,7 +264,7 @@ export default function PlayerRankings() {
                         <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-700 relative">
                           <Image
                             src={player.image || "/placeholder.svg"}
-                            alt={`${player.name} - Ranked #${player.rank} in ${currentRankings.label}`}
+                            alt={`${player.name} - Clasificado #${player.rank} en ${currentRankings.label}`}
                             fill
                             className="object-cover"
                             unoptimized={player.image.includes(".webp") || player.image.includes(".avif")}
@@ -297,10 +291,9 @@ export default function PlayerRankings() {
                           #{player.rank}
                         </div>
                         <div className="font-semibold mt-1">{player.name}</div>
-                        <div className="text-xs text-gray-400 mt-1">ID: {player.playerId}</div>
                         <div className="text-2xl font-bold mt-2">{player.value}</div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -322,7 +315,7 @@ export default function PlayerRankings() {
                       <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 mr-4">
                         <Image
                           src={player.image || "/placeholder.svg"}
-                          alt={`${player.name} - Ranked #${player.rank} in ${currentRankings.label}`}
+                          alt={`${player.name} - Clasificado #${player.rank} en ${currentRankings.label}`}
                           width={40}
                           height={40}
                           className="object-cover"
@@ -331,7 +324,6 @@ export default function PlayerRankings() {
                       </div>
                       <div className="flex-grow">
                         <div className="font-medium">{player.name}</div>
-                        <div className="text-xs text-gray-400">ID: {player.playerId}</div>
                       </div>
                       <div className="text-xl font-bold">{player.value}</div>
                       <ChevronRight className="ml-2 h-5 w-5 text-gray-400" />
@@ -346,22 +338,22 @@ export default function PlayerRankings() {
         {/* Explanation Section */}
         <div className="mb-16">
           <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">About These Rankings</h2>
+            <h2 className="text-3xl font-bold">Acerca de estos Rankings</h2>
             <div className={`ml-4 h-1 flex-grow ${theme.accentColor} rounded-full`}></div>
           </div>
 
           <div className={`${theme.statBg} border ${theme.statBorder} rounded-xl p-6 shadow-lg`}>
             <p className="text-gray-300 mb-4">
-              These rankings show how players on the team compare in various statistical categories. The rankings are
-              calculated based on per-game averages for the current season.
+              Estos rankings muestran cómo se comparan los jugadores del equipo en varias categorías estadísticas. Los
+              rankings se calculan en base a promedios por partido para la temporada actual.
             </p>
             <div className="flex items-start mb-4">
               <div className="bg-emerald-600 p-2 rounded-lg mr-3 mt-1">
                 <BarChart className="h-5 w-5" />
               </div>
               <p className="text-gray-300">
-                <span className="font-semibold text-white">Simple Stats</span> include traditional basketball metrics
-                like points, rebounds, and shooting percentages.
+                <span className="font-semibold text-white">Estadísticas Básicas</span> incluyen métricas tradicionales
+                de baloncesto como puntos, rebotes y porcentajes de tiro.
               </p>
             </div>
             <div className="flex items-start">
@@ -369,8 +361,9 @@ export default function PlayerRankings() {
                 <Activity className="h-5 w-5" />
               </div>
               <p className="text-gray-300">
-                <span className="font-semibold text-white">Advanced Stats</span> provide deeper analytical insights
-                using complex formulas that measure efficiency and impact beyond basic box score statistics.
+                <span className="font-semibold text-white">Estadísticas Avanzadas</span> proporcionan análisis más
+                profundos utilizando fórmulas complejas que miden la eficiencia e impacto más allá de las estadísticas
+                básicas.
               </p>
             </div>
           </div>
@@ -380,10 +373,9 @@ export default function PlayerRankings() {
       {/* Footer */}
       <footer className="w-full bg-gray-900 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
+          <p>© {new Date().getFullYear()} Análisis de Baloncesto. TFG Guillermo</p>
         </div>
       </footer>
     </div>
   )
 }
-
