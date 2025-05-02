@@ -1,10 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
-  ChevronLeft,
   Loader2,
   TrendingUp,
   Search,
@@ -16,6 +15,12 @@ import {
   Zap,
   Award,
   TrendingDown,
+  Download,
+  ArrowUpDown,
+  ChevronUp,
+  HelpCircle,
+  MousePointer,
+  ChevronLeft,
 } from "lucide-react"
 
 // Actualizar las interfaces para incluir estadísticas avanzadas
@@ -30,14 +35,12 @@ interface PlayerGameStats {
   FG3_PCT: number
   PLUS_MINUS: number
   // Estadísticas avanzadas
-  OFF_RTG: number
-  DEF_RTG: number
-  NET_RTG: number
-  TS_PCT: number
-  EFG_PCT: number
-  AST_TO_RATIO: number
-  TOV_PCT: number
-  USG_PCT: number
+  OffRtg: number
+  TS: number
+  eFG: number
+  ASTtoTO: number
+  TOVpercent: number
+  USG: number
 }
 
 interface PlayerConsistencyData {
@@ -54,14 +57,12 @@ interface PlayerConsistencyData {
     FG3_PCT: number
     PLUS_MINUS: number
     // Estadísticas avanzadas
-    OFF_RTG: number
-    DEF_RTG: number
-    NET_RTG: number
-    TS_PCT: number
-    EFG_PCT: number
-    AST_TO_RATIO: number
-    TOV_PCT: number
-    USG_PCT: number
+    OffRtg: number
+    TS: number
+    eFG: number
+    ASTtoTO: number
+    TOVpercent: number
+    USG: number
   }
   standardDeviations: {
     PTS: number
@@ -72,14 +73,12 @@ interface PlayerConsistencyData {
     FG3_PCT: number
     PLUS_MINUS: number
     // Estadísticas avanzadas
-    OFF_RTG: number
-    DEF_RTG: number
-    NET_RTG: number
-    TS_PCT: number
-    EFG_PCT: number
-    AST_TO_RATIO: number
-    TOV_PCT: number
-    USG_PCT: number
+    OffRtg: number
+    TS: number
+    eFG: number
+    ASTtoTO: number
+    TOVpercent: number
+    USG: number
   }
   coefficientOfVariation: {
     PTS: number
@@ -90,14 +89,12 @@ interface PlayerConsistencyData {
     FG3_PCT: number
     PLUS_MINUS: number
     // Estadísticas avanzadas
-    OFF_RTG: number
-    DEF_RTG: number
-    NET_RTG: number
-    TS_PCT: number
-    EFG_PCT: number
-    AST_TO_RATIO: number
-    TOV_PCT: number
-    USG_PCT: number
+    OffRtg: number
+    TS: number
+    eFG: number
+    ASTtoTO: number
+    TOVpercent: number
+    USG: number
   }
   gameData: PlayerGameStats[]
 }
@@ -126,10 +123,22 @@ export default function PlayerConsistencyAnalysis() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"name" | "consistency" | "average">("consistency")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const boxPlotCanvasRef = useRef<HTMLCanvasElement>(null)
-  const scatterPlotCanvasRef = useRef<HTMLCanvasElement>(null)
+  const [boxPlotCanvasRef, setBoxPlotCanvasRef] = useState<HTMLCanvasElement | null>(null)
+  const [scatterPlotCanvasRef, setScatterPlotCanvasRef] = useState<HTMLCanvasElement | null>(null)
+  const [trendChartCanvasRef, setTrendChartCanvasRef] = useState<HTMLCanvasElement | null>(null)
   // Nuevo estado para controlar la pestaña activa
   const [activeStatTab, setActiveStatTab] = useState<"simple" | "advanced">("simple")
+  // Nuevo estado para controlar el modo de visualización
+  const [viewMode, setViewMode] = useState<"charts" | "table">("charts")
+  // Nuevo estado para filtrar por rango de fechas
+  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null,
+  })
+  // Nuevo estado para mostrar/ocultar el panel de información
+  const [showInfoPanel, setShowInfoPanel] = useState(false)
+  // Nuevo estado para controlar si se muestra la guía introductoria
+  const [showIntro, setShowIntro] = useState(true)
 
   useEffect(() => {
     async function fetchData() {
@@ -150,8 +159,14 @@ export default function PlayerConsistencyAnalysis() {
         }
 
         // Set default selected stat based on active tab
-        if (result.simpleStatsCategories && result.simpleStatsCategories.length > 0) {
+        if (activeStatTab === "simple" && result.simpleStatsCategories && result.simpleStatsCategories.length > 0) {
           setSelectedStat(result.simpleStatsCategories[0].key)
+        } else if (
+          activeStatTab === "advanced" &&
+          result.advancedStatsCategories &&
+          result.advancedStatsCategories.length > 0
+        ) {
+          setSelectedStat(result.advancedStatsCategories[0].key)
         }
       } catch (error) {
         console.error("Error fetching player consistency data:", error)
@@ -162,22 +177,50 @@ export default function PlayerConsistencyAnalysis() {
     }
 
     fetchData()
-  }, [])
+  }, [activeStatTab])
 
+  // Modificar los useEffect que dibujan los gráficos para incluir viewMode como dependencia
+  // Esto asegurará que los gráficos se vuelvan a dibujar cuando cambiamos de vista
+
+  // Modificar el useEffect para el boxPlot
   useEffect(() => {
-    if (selectedPlayer && boxPlotCanvasRef.current) {
+    if (selectedPlayer && boxPlotCanvasRef && viewMode === "charts") {
       drawBoxPlot()
     }
-  }, [selectedPlayer, selectedStat, boxPlotCanvasRef])
+  }, [selectedPlayer, selectedStat, boxPlotCanvasRef, viewMode])
 
+  // Modificar el useEffect para el scatterPlot
   useEffect(() => {
-    if (selectedPlayer && scatterPlotCanvasRef.current) {
+    if (selectedPlayer && scatterPlotCanvasRef && viewMode === "charts") {
       drawScatterPlot()
     }
-  }, [selectedPlayer, selectedStat, scatterPlotCanvasRef])
+  }, [selectedPlayer, selectedStat, scatterPlotCanvasRef, viewMode])
+
+  // Modificar el useEffect para el trendChart
+  useEffect(() => {
+    if (selectedPlayer && trendChartCanvasRef && viewMode === "charts") {
+      drawTrendChart()
+    }
+  }, [selectedPlayer, selectedStat, trendChartCanvasRef, viewMode])
+
+  // Añadir un nuevo useEffect que se ejecute cuando cambiemos a la vista de gráficos
+  useEffect(() => {
+    if (viewMode === "charts" && selectedPlayer) {
+      // Pequeño timeout para asegurar que los canvas están montados
+      const timer = setTimeout(() => {
+        if (boxPlotCanvasRef) drawBoxPlot()
+        if (scatterPlotCanvasRef) drawScatterPlot()
+        if (trendChartCanvasRef) drawTrendChart()
+      }, 50)
+
+      return () => clearTimeout(timer)
+    }
+  }, [viewMode, selectedPlayer, selectedStat])
 
   const handlePlayerSelect = (player: PlayerConsistencyData) => {
     setSelectedPlayer(player)
+    // Ocultar la introducción cuando se selecciona un jugador
+    setShowIntro(false)
   }
 
   const handleStatChange = (stat: string) => {
@@ -214,30 +257,253 @@ export default function PlayerConsistencyAnalysis() {
 
   // Modificar la función formatStatValue para manejar estadísticas avanzadas
   const formatStatValue = (value: number, statKey: string): string => {
-    if (["FG_PCT", "FT_PCT", "FG3_PCT", "TS_PCT", "EFG_PCT", "TOV_PCT", "USG_PCT"].includes(statKey)) {
+    if (["FG_PCT", "FT_PCT", "FG3_PCT", "TS", "eFG"].includes(statKey)) {
       return `${(value * 100).toFixed(1)}%`
-    } else if (["OFF_RTG", "DEF_RTG", "NET_RTG"].includes(statKey)) {
+    } else if (["TOVpercent", "USG"].includes(statKey)) {
+      return `${value.toFixed(1)}%` // Estos ya vienen como porcentajes
+    } else if (["OffRtg"].includes(statKey)) {
       return value.toFixed(1)
-    } else if (statKey === "AST_TO_RATIO") {
+    } else if (statKey === "ASTtoTO") {
       return value.toFixed(2)
     } else {
       return value.toFixed(1)
     }
   }
 
-  const getConsistencyRating = (cv: number): { label: string; color: string } => {
+  const getConsistencyRating = (cv: number): { label: string; color: string; icon: JSX.Element } => {
     // Lower CV means more consistent
-    if (cv < 0.15) return { label: "Muy consistente", color: "text-green-400" }
-    if (cv < 0.25) return { label: "Consistente", color: "text-blue-400" }
-    if (cv < 0.35) return { label: "Moderado", color: "text-yellow-400" }
-    if (cv < 0.45) return { label: "Variable", color: "text-orange-400" }
-    return { label: "Muy variable", color: "text-red-400" }
+    if (cv < 0.15)
+      return {
+        label: "Muy consistente",
+        color: "text-green-400",
+        icon: <Award className="h-4 w-4" />,
+      }
+    if (cv < 0.25)
+      return {
+        label: "Consistente",
+        color: "text-blue-400",
+        icon: <TrendingUp className="h-4 w-4" />,
+      }
+    if (cv < 0.35)
+      return {
+        label: "Moderado",
+        color: "text-yellow-400",
+        icon: <Activity className="h-4 w-4" />,
+      }
+    if (cv < 0.45)
+      return {
+        label: "Variable",
+        color: "text-orange-400",
+        icon: <ArrowUpDown className="h-4 w-4" />,
+      }
+    return {
+      label: "Muy variable",
+      color: "text-red-400",
+      icon: <TrendingDown className="h-4 w-4" />,
+    }
+  }
+
+  // Función para dibujar el gráfico de tendencia (nuevo)
+  const drawTrendChart = () => {
+    if (!selectedPlayer || !trendChartCanvasRef) return
+
+    const canvas = trendChartCanvasRef
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Set dimensions
+    const width = canvas.width
+    const height = canvas.height
+    const padding = { top: 40, right: 30, bottom: 60, left: 60 }
+    const chartWidth = width - padding.left - padding.right
+    const chartHeight = height - padding.top - padding.bottom
+
+    // Get data for selected stat
+    const gameData = [...selectedPlayer.gameData].sort(
+      (a, b) => new Date(a.GAME_DATE).getTime() - new Date(b.GAME_DATE).getTime(),
+    )
+
+    const values = gameData.map((game) => game[selectedStat])
+    const dates = gameData.map((game) => new Date(game.GAME_DATE))
+
+    // Calculate moving average (5-game window)
+    const movingAverages: number[] = []
+    const windowSize = Math.min(5, values.length)
+
+    for (let i = 0; i < values.length; i++) {
+      let sum = 0
+      let count = 0
+
+      for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
+        sum += values[j]
+        count++
+      }
+
+      movingAverages.push(sum / count)
+    }
+
+    // Calculate statistics
+    const mean = selectedPlayer.averages[selectedStat]
+
+    // Scale values to chart dimensions
+    const maxValue = Math.max(...values, ...movingAverages, mean * 1.2)
+    const minValue = Math.min(...values, ...movingAverages, mean * 0.8, 0)
+    const valueRange = maxValue - minValue
+
+    const dateRange = dates[dates.length - 1].getTime() - dates[0].getTime()
+    const dateMin = dates[0].getTime()
+
+    const scaleY = (value: number) => {
+      return padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight
+    }
+
+    const scaleX = (date: Date) => {
+      return padding.left + ((date.getTime() - dateMin) / dateRange) * chartWidth
+    }
+
+    // Draw axes
+    ctx.strokeStyle = "#666"
+    ctx.lineWidth = 1
+
+    // Y-axis
+    ctx.beginPath()
+    ctx.moveTo(padding.left, padding.top)
+    ctx.lineTo(padding.left, padding.top + chartHeight)
+    ctx.stroke()
+
+    // X-axis
+    ctx.beginPath()
+    ctx.moveTo(padding.left, padding.top + chartHeight)
+    ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight)
+    ctx.stroke()
+
+    // Draw Y-axis labels
+    ctx.fillStyle = "#fff"
+    ctx.font = "12px Arial"
+    ctx.textAlign = "right"
+    ctx.textBaseline = "middle"
+
+    const numYTicks = 5
+    for (let i = 0; i <= numYTicks; i++) {
+      const value = minValue + (valueRange * i) / numYTicks
+      const y = scaleY(value)
+
+      ctx.beginPath()
+      ctx.moveTo(padding.left - 5, y)
+      ctx.lineTo(padding.left, y)
+      ctx.stroke()
+
+      ctx.fillText(formatStatValue(value, selectedStat), padding.left - 10, y)
+    }
+
+    // Draw X-axis labels (dates)
+    ctx.textAlign = "center"
+    ctx.textBaseline = "top"
+
+    const numXTicks = Math.min(6, dates.length)
+    for (let i = 0; i <= numXTicks; i++) {
+      const dateIndex = Math.floor((dates.length - 1) * (i / numXTicks))
+      const date = dates[dateIndex]
+      const x = scaleX(date)
+
+      ctx.beginPath()
+      ctx.moveTo(x, padding.top + chartHeight)
+      ctx.lineTo(x, padding.top + chartHeight + 5)
+      ctx.stroke()
+
+      // Format date as MM/DD
+      const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`
+      ctx.fillText(formattedDate, x, padding.top + chartHeight + 10)
+    }
+
+    // Draw title
+    ctx.fillStyle = "#fff"
+    ctx.font = "14px Arial"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "top"
+    const statLabel =
+      data?.simpleStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
+      data?.advancedStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
+      selectedStat
+    ctx.fillText(`Tendencia de ${statLabel} (últimos partidos)`, width / 2, 10)
+
+    // Draw mean line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"
+    ctx.lineWidth = 1
+    ctx.setLineDash([5, 3])
+    ctx.beginPath()
+    ctx.moveTo(padding.left, scaleY(mean))
+    ctx.lineTo(padding.left + chartWidth, scaleY(mean))
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // Draw data points and connect with line
+    ctx.strokeStyle = "rgba(79, 70, 229, 0.6)"
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.moveTo(scaleX(dates[0]), scaleY(values[0]))
+
+    for (let i = 1; i < dates.length; i++) {
+      ctx.lineTo(scaleX(dates[i]), scaleY(values[i]))
+    }
+
+    ctx.stroke()
+
+    // Draw moving average line
+    ctx.strokeStyle = "rgb(220, 38, 38)"
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.moveTo(scaleX(dates[0]), scaleY(movingAverages[0]))
+
+    for (let i = 1; i < dates.length; i++) {
+      ctx.lineTo(scaleX(dates[i]), scaleY(movingAverages[i]))
+    }
+
+    ctx.stroke()
+
+    // Draw points
+    ctx.fillStyle = "#fff"
+    ctx.strokeStyle = "rgba(79, 70, 229, 0.8)"
+    for (let i = 0; i < dates.length; i++) {
+      ctx.beginPath()
+      ctx.arc(scaleX(dates[i]), scaleY(values[i]), 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+    }
+
+    // Draw legend
+    const legendY = padding.top + chartHeight + 30
+
+    // Mean line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"
+    ctx.setLineDash([5, 3])
+    ctx.beginPath()
+    ctx.moveTo(padding.left, legendY)
+    ctx.lineTo(padding.left + 20, legendY)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.fillStyle = "#fff"
+    ctx.textAlign = "left"
+    ctx.fillText("Media", padding.left + 25, legendY)
+
+    // Moving average line
+    ctx.strokeStyle = "rgb(220, 38, 38)"
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.moveTo(padding.left + chartWidth / 2 - 30, legendY)
+    ctx.lineTo(padding.left + chartWidth / 2 - 10, legendY)
+    ctx.stroke()
+    ctx.fillStyle = "#fff"
+    ctx.fillText("Media móvil (5 partidos)", padding.left + chartWidth / 2 - 5, legendY)
   }
 
   const drawBoxPlot = () => {
-    if (!selectedPlayer || !boxPlotCanvasRef.current) return
+    if (!selectedPlayer || !boxPlotCanvasRef) return
 
-    const canvas = boxPlotCanvasRef.current
+    const canvas = boxPlotCanvasRef
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -269,8 +535,8 @@ export default function PlayerConsistencyAnalysis() {
     const outliers = values.filter((v) => v < lowerWhisker || v > upperWhisker)
 
     // Scale values to chart dimensions
-    const valueRange = Math.max(upperWhisker - lowerWhisker, 1) * 1.1 // Add 10% padding
-    const valueMin = Math.max(0, lowerWhisker - valueRange * 0.05) // Ensure non-negative for most stats
+    const valueRange = Math.max(upperWhisker - lowerWhisker, 1) * 1.2 // Add 20% padding
+    const valueMin = Math.max(0, lowerWhisker - valueRange * 0.1) // Ensure non-negative for most stats
 
     const scaleY = (value: number) => {
       return padding.top + chartHeight - ((value - valueMin) / valueRange) * chartHeight
@@ -409,9 +675,9 @@ export default function PlayerConsistencyAnalysis() {
   }
 
   const drawScatterPlot = () => {
-    if (!selectedPlayer || !scatterPlotCanvasRef.current) return
+    if (!selectedPlayer || !scatterPlotCanvasRef) return
 
-    const canvas = scatterPlotCanvasRef.current
+    const canvas = scatterPlotCanvasRef
     const ctx = canvas.getContext("2d")
     if (!ctx) return
 
@@ -631,6 +897,57 @@ export default function PlayerConsistencyAnalysis() {
     }
   }
 
+  // Función para exportar datos a CSV
+  const exportToCSV = () => {
+    if (!selectedPlayer) return
+
+    const headers = [
+      "Fecha",
+      "Puntos",
+      "Asistencias",
+      "Rebotes",
+      "% Tiros de campo",
+      "% Tiros libres",
+      "% Triples",
+      "+/-",
+      "Rating Ofensivo",
+      "True Shooting %",
+      "Effective FG%",
+      "AST/TO Ratio",
+      "Turnover %",
+      "Usage Rate",
+    ]
+
+    const rows = selectedPlayer.gameData.map((game) => [
+      game.GAME_DATE,
+      game.PTS.toString(),
+      game.AST.toString(),
+      game.REB.toString(),
+      formatStatValue(game.FG_PCT, "FG_PCT"),
+      formatStatValue(game.FT_PCT, "FT_PCT"),
+      formatStatValue(game.FG3_PCT, "FG3_PCT"),
+      game.PLUS_MINUS.toString(),
+      formatStatValue(game.OffRtg, "OffRtg"),
+      formatStatValue(game.TS, "TS"),
+      formatStatValue(game.eFG, "eFG"),
+      formatStatValue(game.ASTtoTO, "ASTtoTO"),
+      formatStatValue(game.TOVpercent, "TOVpercent"),
+      formatStatValue(game.USG, "USG"),
+    ])
+
+    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.setAttribute("href", url)
+    link.setAttribute("download", `${selectedPlayer.name}_stats.csv`)
+    link.style.visibility = "hidden"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const filteredPlayers =
     data?.players.filter((player) => player.name.toLowerCase().includes(searchTerm.toLowerCase())) || []
 
@@ -655,7 +972,7 @@ export default function PlayerConsistencyAnalysis() {
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <Loader2 className="w-16 h-16 text-blue-600 animate-spin mb-4" />
-          <h1 className="text-2xl font-semibold">Loading statistics...</h1>
+          <h1 className="text-2xl font-semibold">Cargando estadísticas...</h1>
         </div>
       </div>
     )
@@ -668,10 +985,10 @@ export default function PlayerConsistencyAnalysis() {
           <div className="bg-red-500/20 p-4 rounded-full mb-4">
             <TrendingUp className="w-16 h-16 text-red-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">Error Loading Statistics</h1>
+          <h1 className="text-2xl font-semibold mb-4">Error al Cargar Estadísticas</h1>
           <p className="text-gray-400 mb-6">{error}</p>
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -685,10 +1002,10 @@ export default function PlayerConsistencyAnalysis() {
           <div className="bg-yellow-500/20 p-4 rounded-full mb-4">
             <Activity className="w-16 h-16 text-yellow-500" />
           </div>
-          <h1 className="text-2xl font-semibold mb-4">No Data Available</h1>
-          <p className="text-gray-400 mb-6">No player statistics data is currently available.</p>
+          <h1 className="text-2xl font-semibold mb-4">No Hay Datos Disponibles</h1>
+          <p className="text-gray-400 mb-6">No hay datos de estadísticas de jugadores disponibles actualmente.</p>
           <Link href="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors">
-            Return to Home
+            Volver al Inicio
           </Link>
         </div>
       </div>
@@ -697,29 +1014,123 @@ export default function PlayerConsistencyAnalysis() {
 
   return (
     <div className="flex flex-col min-h-screen text-white bg-[#0a0a2a]">
-      {/* Header Banner */}
-      <div className="w-full bg-gradient-to-r from-green-800 to-blue-900 py-8 mb-6">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center">
-            <Link href="/" className="mr-4">
-              <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
-            </Link>
-            <div>
-              <div className="flex items-center">
-                <h1 className="text-4xl md:text-5xl font-bold">Análisis de Consistencia</h1>
-                <div className="ml-4 flex items-center justify-center p-2 rounded-lg bg-white/10">
-                  <BarChart className="h-6 w-6" />
-                </div>
-              </div>
-              <p className="text-blue-100 mt-2">
-                {data.team} • {data.season} Season
-              </p>
-            </div>
-          </div>
+      {/* Header Banner - Simplificado con flecha de regreso */}
+      <div className="w-full bg-gradient-to-r from-blue-900 to-blue-800 py-6">
+        <div className="max-w-7xl mx-auto px-4 flex items-center">
+          <Link href="/" className="mr-4">
+            <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
+          </Link>
+          <h1 className="text-4xl md:text-5xl font-bold">Análisis de Consistencia</h1>
         </div>
       </div>
 
       <div className="w-full max-w-7xl mx-auto px-4 pb-16">
+        {/* Guía Introductoria - Ahora aparece primero */}
+        {showIntro && (
+          <div className="mt-8 mb-10 bg-blue-900/30 border border-blue-800/50 rounded-xl p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold flex items-center">
+                <HelpCircle className="mr-3 h-6 w-6 text-blue-400" />
+                Guía de Análisis de Consistencia
+              </h2>
+              <button
+                onClick={() => setShowIntro(false)}
+                className="text-gray-400 hover:text-white"
+                title="Ocultar guía"
+              >
+                <ChevronUp className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              <p className="text-gray-300">
+                Esta herramienta te permite analizar la consistencia de los jugadores a lo largo de la temporada,
+                ayudándote a identificar qué tan estable es su rendimiento partido a partido.
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-blue-400">¿Qué es la consistencia?</h3>
+                  <p className="text-gray-300 text-sm">
+                    La consistencia mide qué tan estable es el rendimiento de un jugador. Un jugador consistente
+                    mantiene valores similares partido tras partido, mientras que un jugador inconsistente puede tener
+                    grandes variaciones en su rendimiento.
+                  </p>
+                </div>
+
+                <div className="bg-gray-800/50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3 text-blue-400">¿Cómo se mide?</h3>
+                  <p className="text-gray-300 text-sm">
+                    Utilizamos el <strong>Coeficiente de Variación (CV)</strong>, que es la desviación estándar dividida
+                    por la media. Un CV bajo indica mayor consistencia, mientras que un CV alto indica mayor
+                    variabilidad.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-gray-800/50 rounded-lg p-5 mt-4">
+                <h3 className="text-lg font-semibold mb-3 text-blue-400">Cómo usar esta herramienta</h3>
+                <ol className="space-y-3 text-gray-300">
+                  <li className="flex items-start">
+                    <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                      1
+                    </span>
+                    <span>
+                      <strong>Selecciona una estadística</strong> (simple o avanzada) que quieras analizar.
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                      2
+                    </span>
+                    <span>
+                      <strong>Elige un jugador</strong> de la lista para ver su análisis de consistencia.
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                      3
+                    </span>
+                    <span>
+                      <strong>Explora los gráficos</strong> para ver la distribución y evolución de los valores.
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                      4
+                    </span>
+                    <span>
+                      <strong>Revisa el análisis</strong> para identificar fortalezas y debilidades en términos de
+                      consistencia.
+                    </span>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="flex justify-center mt-4">
+                <button
+                  onClick={() => setShowIntro(false)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors flex items-center"
+                >
+                  <MousePointer className="mr-2 h-4 w-4" />
+                  Comenzar a explorar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Botón para mostrar/ocultar la guía cuando está oculta */}
+        {!showIntro && (
+          <button
+            onClick={() => setShowIntro(true)}
+            className="mt-4 mb-6 flex items-center text-blue-400 hover:text-blue-300 transition-colors"
+          >
+            <HelpCircle className="mr-2 h-5 w-5" />
+            <span>Mostrar guía de uso</span>
+          </button>
+        )}
+
         {/* Stat Tabs */}
         <div className="mb-8">
           <div className="flex bg-gray-800 rounded-lg p-1 max-w-md mx-auto">
@@ -865,7 +1276,10 @@ export default function PlayerConsistencyAnalysis() {
                         <span className="text-gray-400 mr-2">
                           {formatStatValue(player.averages[selectedStat], selectedStat)}
                         </span>
-                        <span className={`${consistencyRating.color}`}>{consistencyRating.label}</span>
+                        <span className={`${consistencyRating.color} flex items-center`}>
+                          {consistencyRating.icon}
+                          <span className="ml-1">{consistencyRating.label}</span>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -878,21 +1292,37 @@ export default function PlayerConsistencyAnalysis() {
           <div className="lg:col-span-2">
             {selectedPlayer ? (
               <div className="bg-gray-800 rounded-xl p-6 shadow-lg">
-                <div className="flex items-center mb-6">
-                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-700 mr-4">
-                    <Image
-                      src={selectedPlayer.image || "/placeholder.svg"}
-                      alt={selectedPlayer.name}
-                      width={64}
-                      height={64}
-                      className="object-cover"
-                    />
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-700 mr-4">
+                      <Image
+                        src={selectedPlayer.image || "/placeholder.svg"}
+                        alt={selectedPlayer.name}
+                        width={64}
+                        height={64}
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold">{selectedPlayer.name}</h2>
+                      <p className="text-gray-400">{selectedPlayer.gamesPlayed} partidos jugados</p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">{selectedPlayer.name}</h2>
-                    <p className="text-gray-400">
-                      {selectedPlayer.gamesPlayed} partidos jugados • {data.season} Season
-                    </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={exportToCSV}
+                      className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg text-gray-300 hover:text-white transition-colors"
+                      title="Exportar datos a CSV"
+                    >
+                      <Download className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => setShowInfoPanel(!showInfoPanel)}
+                      className="bg-gray-700 hover:bg-gray-600 p-2 rounded-lg text-gray-300 hover:text-white transition-colors"
+                      title="Información sobre consistencia"
+                    >
+                      <Info className="h-5 w-5" />
+                    </button>
                   </div>
                 </div>
 
@@ -912,53 +1342,174 @@ export default function PlayerConsistencyAnalysis() {
                   </div>
                   <div className="bg-gray-700 rounded-lg p-4">
                     <div className="text-sm text-gray-400 mb-1">Consistencia</div>
-                    <div className="text-2xl font-bold">
+                    <div className="text-2xl font-bold flex items-center">
                       <span className={getConsistencyRating(selectedPlayer.coefficientOfVariation[selectedStat]).color}>
                         {getConsistencyRating(selectedPlayer.coefficientOfVariation[selectedStat]).label}
+                      </span>
+                      <span className="ml-2 text-sm text-gray-400">
+                        (CV: {(selectedPlayer.coefficientOfVariation[selectedStat] * 100).toFixed(1)}%)
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Box Plot */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <BarChart className="mr-2 h-5 w-5 text-green-400" />
-                    Distribución Estadística
-                    <div className="relative ml-2 group">
-                      <Info className="h-4 w-4 text-gray-400" />
-                      <div className="absolute left-0 top-full mt-2 w-64 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
-                        <p>
-                          El gráfico de cajas muestra la distribución de los valores, incluyendo mediana, cuartiles y
-                          valores atípicos.
-                        </p>
+                {/* Visualization Tabs */}
+                <div className="mb-4">
+                  <div className="flex bg-gray-700 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode("charts")}
+                      className={`flex-1 py-2 text-center rounded-md transition-all duration-300 ${
+                        viewMode === "charts"
+                          ? "bg-gradient-to-r from-green-600 to-blue-700 text-white shadow-lg"
+                          : "text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center">
+                        <LineChart className="h-4 w-4 mr-2" />
+                        <span>Gráficos</span>
                       </div>
-                    </div>
-                  </h3>
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <canvas ref={boxPlotCanvasRef} width={600} height={300} className="w-full h-auto"></canvas>
+                    </button>
+                    <button
+                      onClick={() => setViewMode("table")}
+                      className={`flex-1 py-2 text-center rounded-md transition-all duration-300 ${
+                        viewMode === "table"
+                          ? "bg-gradient-to-r from-green-600 to-blue-700 text-white shadow-lg"
+                          : "text-gray-300 hover:bg-gray-600"
+                      }`}
+                    >
+                      <div className="flex items-center justify-center">
+                        <BarChart className="h-4 w-4 mr-2" />
+                        <span>Datos</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
 
-                {/* Scatter Plot */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center">
-                    <LineChart className="mr-2 h-5 w-5 text-blue-400" />
-                    Evolución Temporal
-                    <div className="relative ml-2 group">
-                      <Info className="h-4 w-4 text-gray-400" />
-                      <div className="absolute left-0 top-full mt-2 w-64 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
-                        <p>
-                          El gráfico muestra la evolución de los valores a lo largo de la temporada, con bandas de
-                          confianza basadas en la desviación estándar.
-                        </p>
+                {viewMode === "charts" ? (
+                  <div className="max-h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                    {/* Trend Chart (New) */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center sticky top-0 bg-gray-800 py-2 z-10">
+                        <TrendingUp className="mr-2 h-5 w-5 text-blue-400" />
+                        Tendencia Reciente
+                        <div className="relative ml-2 group">
+                          <Info className="h-4 w-4 text-gray-400" />
+                          <div className="absolute left-0 top-full mt-2 w-64 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                            <p>
+                              Muestra la evolución reciente del jugador con una media móvil de 5 partidos para
+                              identificar tendencias.
+                            </p>
+                          </div>
+                        </div>
+                      </h3>
+                      <div className="bg-gray-700 rounded-lg p-4">
+                        <canvas
+                          ref={(el) => setTrendChartCanvasRef(el)}
+                          width={600}
+                          height={300}
+                          className="w-full h-auto"
+                        ></canvas>
                       </div>
                     </div>
-                  </h3>
-                  <div className="bg-gray-700 rounded-lg p-4">
-                    <canvas ref={scatterPlotCanvasRef} width={600} height={300} className="w-full h-auto"></canvas>
+
+                    {/* Box Plot */}
+                    <div className="mb-8">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center sticky top-0 bg-gray-800 py-2 z-10">
+                        <BarChart className="mr-2 h-5 w-5 text-green-400" />
+                        Distribución Estadística
+                        <div className="relative ml-2 group">
+                          <Info className="h-4 w-4 text-gray-400" />
+                          <div className="absolute left-0 top-full mt-2 w-64 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                            <p>
+                              El gráfico de cajas muestra la distribución de los valores, incluyendo mediana, cuartiles
+                              y valores atípicos.
+                            </p>
+                          </div>
+                        </div>
+                      </h3>
+                      <div className="bg-gray-700 rounded-lg p-4">
+                        <canvas
+                          ref={(el) => setBoxPlotCanvasRef(el)}
+                          width={600}
+                          height={300}
+                          className="w-full h-auto"
+                        ></canvas>
+                      </div>
+                    </div>
+
+                    {/* Scatter Plot */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4 flex items-center sticky top-0 bg-gray-800 py-2 z-10">
+                        <LineChart className="mr-2 h-5 w-5 text-blue-400" />
+                        Evolución Temporal
+                        <div className="relative ml-2 group">
+                          <Info className="h-4 w-4 text-gray-400" />
+                          <div className="absolute left-0 top-full mt-2 w-64 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
+                            <p>
+                              El gráfico muestra la evolución de los valores a lo largo de la temporada, con bandas de
+                              confianza basadas en la desviación estándar.
+                            </p>
+                          </div>
+                        </div>
+                      </h3>
+                      <div className="bg-gray-700 rounded-lg p-4">
+                        <canvas
+                          ref={(el) => setScatterPlotCanvasRef(el)}
+                          width={600}
+                          height={300}
+                          className="w-full h-auto"
+                        ></canvas>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h3 className="text-lg font-semibold mb-4">Datos por Partido</h3>
+                    <div className="overflow-x-auto overflow-y-auto max-h-[500px] pr-2 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 bg-gray-700 z-10">
+                          <tr className="border-b border-gray-600">
+                            <th className="py-2 px-3 text-left">Fecha</th>
+                            <th className="py-2 px-3 text-right">
+                              {data.simpleStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
+                                data.advancedStatsCategories.find((cat) => cat.key === selectedStat)?.label}
+                            </th>
+                            <th className="py-2 px-3 text-right">Desviación</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {selectedPlayer.gameData
+                            .sort((a, b) => new Date(b.GAME_DATE).getTime() - new Date(a.GAME_DATE).getTime())
+                            .map((game, index) => {
+                              const value = game[selectedStat]
+                              const mean = selectedPlayer.averages[selectedStat]
+                              const deviation = value - mean
+                              const deviationPercentage = mean !== 0 ? (deviation / mean) * 100 : 0
+
+                              return (
+                                <tr key={game.Game_ID} className={index % 2 === 0 ? "bg-gray-600/30" : ""}>
+                                  <td className="py-2 px-3">{new Date(game.GAME_DATE).toLocaleDateString()}</td>
+                                  <td className="py-2 px-3 text-right font-medium">
+                                    {formatStatValue(value, selectedStat)}
+                                  </td>
+                                  <td
+                                    className={`py-2 px-3 text-right ${deviation > 0 ? "text-green-400" : deviation < 0 ? "text-red-400" : "text-gray-400"}`}
+                                  >
+                                    {deviation > 0 ? "+" : ""}
+                                    {formatStatValue(deviation, selectedStat)}
+                                    <span className="text-xs text-gray-400 ml-1">
+                                      ({deviationPercentage > 0 ? "+" : ""}
+                                      {deviationPercentage.toFixed(1)}%)
+                                    </span>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Player Consistency Analysis */}
                 <div className="mt-8 bg-gray-700 rounded-lg p-6">
@@ -1107,6 +1658,52 @@ export default function PlayerConsistencyAnalysis() {
                     </div>
                   </div>
                 </div>
+
+                {/* Information Panel (Collapsible) */}
+                {showInfoPanel && (
+                  <div className="mt-8 bg-blue-900/30 border border-blue-800/30 rounded-lg p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center">
+                      <Info className="mr-2 text-blue-400" size={20} />
+                      Interpretación del Análisis de Consistencia
+                    </h3>
+
+                    <div className="space-y-4 text-gray-300">
+                      <p>
+                        El <strong>Coeficiente de Variación (CV)</strong> es la medida principal de consistencia,
+                        calculado como la desviación estándar dividida por la media. Un CV bajo indica mayor
+                        consistencia.
+                      </p>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div className="bg-gray-800 rounded-lg p-4">
+                          <h4 className="font-semibold text-green-400 mb-2">Jugadores Consistentes</h4>
+                          <ul className="space-y-1 text-sm">
+                            <li>• Rendimiento predecible partido a partido</li>
+                            <li>• Confiables en momentos críticos</li>
+                            <li>• Ideales para roles específicos</li>
+                            <li>• Base sólida para estrategias de equipo</li>
+                          </ul>
+                        </div>
+
+                        <div className="bg-gray-800 rounded-lg p-4">
+                          <h4 className="font-semibold text-red-400 mb-2">Jugadores Variables</h4>
+                          <ul className="space-y-1 text-sm">
+                            <li>• Rendimiento impredecible</li>
+                            <li>• Pueden tener partidos excepcionales</li>
+                            <li>• Mayor riesgo en momentos decisivos</li>
+                            <li>• Requieren planes de contingencia</li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      <p className="text-sm mt-4">
+                        <strong>Nota:</strong> La consistencia no siempre es mejor que la inconsistencia. Un jugador con
+                        promedios bajos pero muy consistente puede ser menos valioso que un jugador con promedios altos
+                        pero inconsistente, dependiendo del contexto y las necesidades del equipo.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-gray-800 rounded-xl p-6 shadow-lg flex items-center justify-center h-full">
@@ -1116,54 +1713,25 @@ export default function PlayerConsistencyAnalysis() {
           </div>
         </div>
 
-        {/* Explanation Section */}
-        <div className="mt-16">
-          <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">Acerca del Análisis de Consistencia</h2>
-            <div className="ml-4 h-1 flex-grow bg-green-600 rounded-full"></div>
+        {/* Footer */}
+        <footer className="w-full bg-gray-900 py-6 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
+            <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
           </div>
-
-          <div className="bg-green-900/20 border border-green-800/30 rounded-xl p-6 shadow-lg">
-            <p className="text-gray-300 mb-4">
-              El análisis de consistencia evalúa qué tan estable es el rendimiento de un jugador partido a partido,
-              identificando si mantiene un nivel constante o si presenta grandes fluctuaciones.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-start">
-                <div className="bg-green-600 p-2 rounded-lg mr-3 mt-1">
-                  <BarChart className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold mb-1">Métricas clave</p>
-                  <p className="text-gray-300">
-                    Utilizamos la desviación estándar y el coeficiente de variación (CV) para medir la dispersión de los
-                    datos. Un CV bajo indica mayor consistencia, mientras que un CV alto sugiere mayor variabilidad.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start">
-                <div className="bg-blue-600 p-2 rounded-lg mr-3 mt-1">
-                  <Activity className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-white font-semibold mb-1">Interpretación</p>
-                  <p className="text-gray-300">
-                    Los jugadores consistentes son más confiables en situaciones críticas, mientras que los jugadores
-                    variables pueden tener partidos excepcionales pero también muy por debajo de su media.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        </footer>
       </div>
-
-      {/* Footer */}
-      <footer className="w-full bg-gray-900 py-6 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
-        </div>
-      </footer>
     </div>
   )
+}
+
+function calculateQuantile(sortedValues: number[], q: number) {
+  const pos = (sortedValues.length - 1) * q
+  const base = Math.floor(pos)
+  const rest = pos - base
+
+  if (sortedValues[base + 1] !== undefined) {
+    return sortedValues[base] + rest * (sortedValues[base + 1] - sortedValues[base])
+  } else {
+    return sortedValues[base]
+  }
 }

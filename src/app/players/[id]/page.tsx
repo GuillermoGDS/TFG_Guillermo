@@ -34,12 +34,12 @@ export default function PlayerPage() {
 
         // Format advanced stats from the main API response
         const formattedAdvancedStats = [
-          { name: "Offensive Rating (OffRtg)", value: data.averages.OffRtg.toFixed(1) },
-          { name: "True Shooting % (TS%)", value: `${(data.averages.TS * 100).toFixed(1)}%` },
-          { name: "Effective Field Goal % (eFG%)", value: `${(data.averages.eFG * 100).toFixed(1)}%` },
-          { name: "Assist to Turnover Ratio (AST/TO)", value: data.averages.ASTtoTO.toFixed(2) },
-          { name: "Turnover Percentage (TOV%)", value: `${data.averages.TOVpercent.toFixed(1)}%` },
-          { name: "Usage Rate (USG%)", value: `${data.averages.USG.toFixed(1)}%` },
+          { name: "Rating Ofensivo (OffRtg)", value: data.averages.OffRtg.toFixed(1) },
+          { name: "Porcentaje de Tiro Real (TS%)", value: `${(data.averages.TS * 100).toFixed(1)}%` },
+          { name: "Porcentaje Efectivo de Tiro (eFG%)", value: `${(data.averages.eFG * 100).toFixed(1)}%` },
+          { name: "Ratio Asistencias/Pérdidas (AST/TO)", value: data.averages.ASTtoTO.toFixed(2) },
+          { name: "Porcentaje de Pérdidas (TOV%)", value: `${data.averages.TOVpercent.toFixed(1)}%` },
+          { name: "Porcentaje de Uso (USG%)", value: `${data.averages.USG.toFixed(1)}%` },
           {
             name: "Plus-Minus (+/-)",
             value:
@@ -65,16 +65,16 @@ export default function PlayerPage() {
   const isHighlightedStat = (name: string, value: string | number) => {
     const numValue = typeof value === "string" ? Number.parseFloat(value) : value
 
-    if (name.includes("Points") && numValue > 15) return true
-    if (name.includes("Assists") && numValue > 5) return true
-    if (name.includes("Rebounds") && numValue > 7) return true
-    if (name.includes("Steals") && numValue > 1.5) return true
-    if (name.includes("Blocks") && numValue > 1) return true
+    if (name.includes("Puntos") && numValue > 15) return true
+    if (name.includes("Asistencias") && numValue > 5) return true
+    if (name.includes("Rebotes") && numValue > 7) return true
+    if (name.includes("Robos") && numValue > 1.5) return true
+    if (name.includes("Tapones") && numValue > 1) return true
     if (name.includes("FG%") && numValue > 45) return true
     if (name.includes("3P%") && numValue > 35) return true
     if (name.includes("FT%") && numValue > 80) return true
     if (name.includes("Rating") && numValue > 110) return true
-    if (name.includes("Shooting") && numValue > 55) return true
+    if (name.includes("Tiro") && numValue > 55) return true
 
     return false
   }
@@ -84,7 +84,7 @@ export default function PlayerPage() {
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <h1 className="text-2xl font-semibold">Loading player profile...</h1>
+          <h1 className="text-2xl font-semibold">Cargando perfil del jugador...</h1>
         </div>
       </div>
     )
@@ -94,13 +94,13 @@ export default function PlayerPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="bg-gray-800 rounded-xl p-10 shadow-lg max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold mb-6">Player not found</h1>
+          <h1 className="text-3xl font-bold mb-6">Jugador no encontrado</h1>
           <button
             onClick={() => router.push("/")}
             className="bg-gradient-to-r from-blue-600 to-purple-700 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center w-full"
           >
             <ChevronLeft className="mr-2" size={20} />
-            Go back to home
+            Volver al inicio
           </button>
         </div>
       </div>
@@ -109,24 +109,24 @@ export default function PlayerPage() {
 
   // Combine all simple stats into one array with corrected percentage values
   const allSimpleStats = [
-    { name: "Points per game", value: stats.PTS?.toFixed(1) || "0.0" },
-    { name: "Assists per game", value: stats.AST?.toFixed(1) || "0.0" },
-    { name: "Rebounds per game", value: stats.REB?.toFixed(1) || "0.0" },
-    { name: "Steals per game", value: stats.STL?.toFixed(1) || "0.0" },
-    { name: "Blocks per game", value: stats.BLK?.toFixed(1) || "0.0" },
-    { name: "Turnovers per game", value: stats.TOV?.toFixed(1) || "0.0" },
+    { name: "Puntos por partido", value: stats.PTS?.toFixed(1) || "0.0" },
+    { name: "Asistencias por partido", value: stats.AST?.toFixed(1) || "0.0" },
+    { name: "Rebotes por partido", value: stats.REB?.toFixed(1) || "0.0" },
+    { name: "Robos por partido", value: stats.STL?.toFixed(1) || "0.0" },
+    { name: "Tapones por partido", value: stats.BLK?.toFixed(1) || "0.0" },
+    { name: "Pérdidas por partido", value: stats.TOV?.toFixed(1) || "0.0" },
     // Multiplicamos por 100 los valores de porcentaje para mostrarlos correctamente
     { name: "FG%", value: `${(stats.FG_PCT * 100)?.toFixed(1) || "0.0"}%` },
     { name: "3P%", value: `${(stats.FG3_PCT * 100)?.toFixed(1) || "0.0"}%` },
     { name: "FT%", value: `${(stats.FT_PCT * 100)?.toFixed(1) || "0.0"}%` },
     { name: "Plus/Minus", value: stats.PLUS_MINUS?.toFixed(1) || "0.0" },
-    { name: "Field Goals Made", value: stats.FGM?.toFixed(1) || "0.0" },
-    { name: "Field Goals Attempted", value: stats.FGA?.toFixed(1) || "0.0" },
-    { name: "Free Throws Made", value: stats.FTM?.toFixed(1) || "0.0" },
-    { name: "Free Throws Attempted", value: stats.FTA?.toFixed(1) || "0.0" },
-    { name: "Offensive Rebounds", value: stats.OREB?.toFixed(1) || "0.0" },
-    { name: "Defensive Rebounds", value: stats.DREB?.toFixed(1) || "0.0" },
-    { name: "Games Played", value: Object.keys(stats).length.toString() },
+    { name: "Tiros de campo anotados", value: stats.FGM?.toFixed(1) || "0.0" },
+    { name: "Tiros de campo intentados", value: stats.FGA?.toFixed(1) || "0.0" },
+    { name: "Tiros libres anotados", value: stats.FTM?.toFixed(1) || "0.0" },
+    { name: "Tiros libres intentados", value: stats.FTA?.toFixed(1) || "0.0" },
+    { name: "Rebotes ofensivos", value: stats.OREB?.toFixed(1) || "0.0" },
+    { name: "Rebotes defensivos", value: stats.DREB?.toFixed(1) || "0.0" },
+    { name: "Partidos jugados", value: Object.keys(stats).length.toString() },
   ]
 
   // Agrupar estadísticas simples por categorías
@@ -143,11 +143,11 @@ export default function PlayerPage() {
       // Normalizar los valores para comparación
       const getNormalizedValue = (stat: { name: string; value: string }) => {
         const val = Number.parseFloat(stat.value)
-        if (stat.name.includes("Points")) return val / 30
-        if (stat.name.includes("Assists")) return val / 10
-        if (stat.name.includes("Rebounds")) return val / 15
-        if (stat.name.includes("Steals")) return val / 3
-        if (stat.name.includes("Blocks")) return val / 3
+        if (stat.name.includes("Puntos")) return val / 30
+        if (stat.name.includes("Asistencias")) return val / 10
+        if (stat.name.includes("Rebotes")) return val / 15
+        if (stat.name.includes("Robos")) return val / 3
+        if (stat.name.includes("Tapones")) return val / 3
         if (stat.name.includes("FG%")) return val / 100
         if (stat.name.includes("3P%")) return val / 100
         if (stat.name.includes("FT%")) return val / 100
@@ -172,8 +172,8 @@ export default function PlayerPage() {
               <ChevronLeft className="h-8 w-8 text-blue-200 hover:text-white transition-colors" />
             </Link>
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold">Player Profile</h1>
-              <p className="text-blue-100 mt-2">Detailed statistics and analysis</p>
+              <h1 className="text-4xl md:text-5xl font-bold">Perfil del Jugador</h1>
+              <p className="text-blue-100 mt-2">Estadísticas detalladas y análisis</p>
             </div>
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function PlayerPage() {
               <div className="h-80 md:h-full relative">
                 <Image
                   src={playerData.image || "/placeholder.svg?height=400&width=300"}
-                  alt={`${playerData.name} - Player Profile`}
+                  alt={`${playerData.name} - Perfil del Jugador`}
                   fill
                   className="object-cover"
                   unoptimized={playerData.image?.includes(".webp") || playerData.image?.includes(".avif")}
@@ -200,7 +200,7 @@ export default function PlayerPage() {
                 <div className="flex items-center mb-2">
                   <div className="bg-blue-600/30 px-3 py-1 rounded-full text-sm text-blue-300 flex items-center">
                     <Shield className="h-4 w-4 mr-1" />
-                    Player Profile
+                    Perfil del Jugador
                   </div>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-bold mb-6">{playerData.name}</h1>
@@ -223,19 +223,19 @@ export default function PlayerPage() {
               <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-3 flex items-center">
                   <Activity className="h-5 w-5 mr-2 text-blue-400" />
-                  Key Performance Metrics
+                  Métricas Clave de Rendimiento
                 </h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-gray-900/50 p-3 rounded-lg text-center">
-                    <p className="text-sm text-gray-400">Points</p>
+                    <p className="text-sm text-gray-400">Puntos</p>
                     <p className="text-2xl font-bold">{stats.PTS?.toFixed(1) || "0.0"}</p>
                   </div>
                   <div className="bg-gray-900/50 p-3 rounded-lg text-center">
-                    <p className="text-sm text-gray-400">Rebounds</p>
+                    <p className="text-sm text-gray-400">Rebotes</p>
                     <p className="text-2xl font-bold">{stats.REB?.toFixed(1) || "0.0"}</p>
                   </div>
                   <div className="bg-gray-900/50 p-3 rounded-lg text-center">
-                    <p className="text-sm text-gray-400">Assists</p>
+                    <p className="text-sm text-gray-400">Asistencias</p>
                     <p className="text-2xl font-bold">{stats.AST?.toFixed(1) || "0.0"}</p>
                   </div>
                 </div>
@@ -257,7 +257,7 @@ export default function PlayerPage() {
             >
               <div className="flex items-center justify-center">
                 <BarChart3 className="h-5 w-5 mr-2" />
-                <span>Simple Stats</span>
+                <span>Estadísticas Básicas</span>
               </div>
             </button>
             <button
@@ -270,7 +270,7 @@ export default function PlayerPage() {
             >
               <div className="flex items-center justify-center">
                 <TrendingUp className="h-5 w-5 mr-2" />
-                <span>Advanced Stats</span>
+                <span>Estadísticas Avanzadas</span>
               </div>
             </button>
           </div>
@@ -283,7 +283,7 @@ export default function PlayerPage() {
               <div className="flex items-center mb-6">
                 <h2 className="text-3xl font-bold flex items-center">
                   <Award className="mr-3 h-8 w-8 text-yellow-500" />
-                  Key Statistics
+                  Estadísticas Clave
                 </h2>
                 <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
               </div>
@@ -307,17 +307,17 @@ export default function PlayerPage() {
                       <p className="text-4xl font-bold">{stat.value}</p>
 
                       {/* Barra de progreso visual para algunas estadísticas */}
-                      {(stat.name.includes("Points") ||
-                        stat.name.includes("Rebounds") ||
-                        stat.name.includes("Assists")) && (
+                      {(stat.name.includes("Puntos") ||
+                        stat.name.includes("Rebotes") ||
+                        stat.name.includes("Asistencias")) && (
                         <div className="w-full bg-gray-700 h-2 rounded-full mt-4 overflow-hidden">
                           <div
                             className="h-full rounded-full bg-yellow-500"
                             style={{
                               width: `${Math.min(
-                                stat.name.includes("Points")
+                                stat.name.includes("Puntos")
                                   ? Number.parseFloat(stat.value) * 3
-                                  : stat.name.includes("Rebounds")
+                                  : stat.name.includes("Rebotes")
                                     ? Number.parseFloat(stat.value) * 5
                                     : Number.parseFloat(stat.value) * 8,
                                 100,
@@ -337,7 +337,7 @@ export default function PlayerPage() {
               <div className="flex items-center mb-6">
                 <h2 className="text-3xl font-bold flex items-center">
                   <BarChart3 className="mr-3 h-8 w-8 text-green-500" />
-                  Shooting Efficiency
+                  Eficiencia de Tiro
                 </h2>
                 <div className="ml-4 h-1 flex-grow bg-green-600 rounded-full"></div>
               </div>
@@ -371,7 +371,7 @@ export default function PlayerPage() {
                         ></div>
                       </div>
                       <div className="mt-1 text-xs text-right text-gray-400">
-                        League average: {stat.name === "FG%" ? "45.0%" : stat.name === "3P%" ? "35.0%" : "75.0%"}
+                        Promedio de la liga: {stat.name === "FG%" ? "45.0%" : stat.name === "3P%" ? "35.0%" : "75.0%"}
                       </div>
                     </div>
                   )
@@ -382,7 +382,7 @@ export default function PlayerPage() {
             {/* Detailed Stats Section */}
             <div className="mb-10">
               <div className="flex items-center mb-6">
-                <h2 className="text-3xl font-bold">Detailed Statistics</h2>
+                <h2 className="text-3xl font-bold">Estadísticas Detalladas</h2>
                 <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
               </div>
 
@@ -403,11 +403,13 @@ export default function PlayerPage() {
               <div className="flex items-center mb-6">
                 <h2 className="text-3xl font-bold flex items-center">
                   <TrendingUp className="mr-3 h-8 w-8 text-purple-500" />
-                  Advanced Analytics
+                  Análisis Avanzado
                 </h2>
                 <div className="ml-4 h-1 flex-grow bg-purple-600 rounded-full"></div>
                 {isAdvancedStatsProvisional && (
-                  <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Provisional data</div>
+                  <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">
+                    Datos provisionales
+                  </div>
                 )}
               </div>
 
@@ -433,15 +435,17 @@ export default function PlayerPage() {
                         <div className="relative group">
                           <Info className="h-4 w-4 text-gray-400 cursor-help" />
                           <div className="absolute right-0 w-48 p-2 bg-gray-900 rounded-md shadow-lg text-xs hidden group-hover:block z-10">
-                            {stat.name.includes("Offensive Rating") && "Points produced per 100 possessions"}
-                            {stat.name.includes("True Shooting") &&
-                              "Shooting percentage accounting for FG, 3PT, and FT"}
-                            {stat.name.includes("Effective Field Goal") &&
-                              "Field goal percentage adjusted for 3-pointers"}
-                            {stat.name.includes("Assist to Turnover") && "Ratio of assists to turnovers"}
-                            {stat.name.includes("Turnover Percentage") && "Turnovers per 100 plays"}
-                            {stat.name.includes("Usage Rate") && "Percentage of team plays used by a player"}
-                            {stat.name.includes("Plus-Minus") && "Team's point differential when player is on court"}
+                            {stat.name.includes("Rating Ofensivo") && "Puntos producidos por 100 posesiones"}
+                            {stat.name.includes("Porcentaje de Tiro Real") &&
+                              "Porcentaje de tiro que tiene en cuenta tiros de campo, triples y tiros libres"}
+                            {stat.name.includes("Porcentaje Efectivo") &&
+                              "Porcentaje de tiro de campo ajustado para triples"}
+                            {stat.name.includes("Ratio Asistencias") && "Proporción de asistencias a pérdidas"}
+                            {stat.name.includes("Porcentaje de Pérdidas") && "Pérdidas por cada 100 jugadas"}
+                            {stat.name.includes("Porcentaje de Uso") &&
+                              "Porcentaje de jugadas del equipo utilizadas por el jugador"}
+                            {stat.name.includes("Plus-Minus") &&
+                              "Diferencial de puntos del equipo cuando el jugador está en pista"}
                           </div>
                         </div>
                       </div>
@@ -465,44 +469,45 @@ export default function PlayerPage() {
             {/* Advanced Analysis Insights */}
             <div className="mb-10">
               <div className="flex items-center mb-6">
-                <h2 className="text-3xl font-bold">Performance Insights</h2>
+                <h2 className="text-3xl font-bold">Análisis de Rendimiento</h2>
                 <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
               </div>
 
               <div className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 rounded-xl p-6 shadow-lg">
-                <h3 className="text-xl font-semibold mb-4">Player Analysis</h3>
+                <h3 className="text-xl font-semibold mb-4">Análisis del Jugador</h3>
                 <p className="text-gray-300 mb-4">
-                  Based on the advanced metrics, {playerData.name} shows the following performance characteristics:
+                  Basado en las métricas avanzadas, {playerData.name} muestra las siguientes características de
+                  rendimiento:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <h4 className="text-lg font-medium mb-2 flex items-center">
                       <Award className="h-5 w-5 mr-2 text-yellow-500" />
-                      Strengths
+                      Fortalezas
                     </h4>
                     <ul className="space-y-2 text-gray-300">
                       {Number.parseFloat(stats.PTS?.toFixed(1) || "0") > 15 && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
-                          Strong scoring ability with {stats.PTS?.toFixed(1)} points per game
+                          Gran capacidad anotadora con {stats.PTS?.toFixed(1)} puntos por partido
                         </li>
                       )}
                       {Number.parseFloat(stats.AST?.toFixed(1) || "0") > 5 && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
-                          Excellent playmaking with {stats.AST?.toFixed(1)} assists per game
+                          Excelente creación de juego con {stats.AST?.toFixed(1)} asistencias por partido
                         </li>
                       )}
                       {Number.parseFloat(stats.REB?.toFixed(1) || "0") > 7 && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
-                          Strong rebounding presence with {stats.REB?.toFixed(1)} rebounds per game
+                          Fuerte presencia en el rebote con {stats.REB?.toFixed(1)} rebotes por partido
                         </li>
                       )}
                       {Number.parseFloat((stats.FG_PCT * 100)?.toFixed(1) || "0") > 45 && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
-                          Efficient shooter with {(stats.FG_PCT * 100)?.toFixed(1)}% field goal percentage
+                          Tirador eficiente con {(stats.FG_PCT * 100)?.toFixed(1)}% en tiros de campo
                         </li>
                       )}
                       {/* Fallback if no specific strengths are identified */}
@@ -514,7 +519,7 @@ export default function PlayerPage() {
                       ) && (
                         <li className="flex items-start">
                           <span className="text-green-500 mr-2">•</span>
-                          Balanced contributor across multiple statistical categories
+                          Contribución equilibrada en múltiples categorías estadísticas
                         </li>
                       )}
                     </ul>
@@ -522,25 +527,25 @@ export default function PlayerPage() {
                   <div className="bg-gray-800/50 rounded-lg p-4">
                     <h4 className="text-lg font-medium mb-2 flex items-center">
                       <TrendingUp className="h-5 w-5 mr-2 text-blue-500" />
-                      Development Areas
+                      Áreas de Desarrollo
                     </h4>
                     <ul className="space-y-2 text-gray-300">
                       {Number.parseFloat(stats.TOV?.toFixed(1) || "0") > 3 && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
-                          Ball security could improve ({stats.TOV?.toFixed(1)} turnovers per game)
+                          La seguridad del balón podría mejorar ({stats.TOV?.toFixed(1)} pérdidas por partido)
                         </li>
                       )}
                       {Number.parseFloat((stats.FG3_PCT * 100)?.toFixed(1) || "0") < 33 && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
-                          Three-point shooting efficiency ({(stats.FG3_PCT * 100)?.toFixed(1)}%)
+                          Eficiencia en tiros de tres puntos ({(stats.FG3_PCT * 100)?.toFixed(1)}%)
                         </li>
                       )}
                       {Number.parseFloat((stats.FT_PCT * 100)?.toFixed(1) || "0") < 75 && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
-                          Free throw consistency ({(stats.FT_PCT * 100)?.toFixed(1)}%)
+                          Consistencia en tiros libres ({(stats.FT_PCT * 100)?.toFixed(1)}%)
                         </li>
                       )}
                       {/* Fallback if no specific development areas are identified */}
@@ -551,7 +556,7 @@ export default function PlayerPage() {
                       ) && (
                         <li className="flex items-start">
                           <span className="text-blue-500 mr-2">•</span>
-                          Continued development as an all-around player
+                          Continuar el desarrollo como jugador completo
                         </li>
                       )}
                     </ul>
@@ -565,7 +570,7 @@ export default function PlayerPage() {
         {/* Performance Chart Section */}
         <div className="mb-10">
           <div className="flex items-center mb-6">
-            <h2 className="text-3xl font-bold">Performance Visualization</h2>
+            <h2 className="text-3xl font-bold">Visualización de Rendimiento</h2>
             <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
           </div>
 
@@ -577,12 +582,12 @@ export default function PlayerPage() {
                   <div className="bg-blue-600 rounded-full p-2 mr-3">
                     <BarChart3 className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold">Player Radar Analysis</h3>
+                  <h3 className="text-xl font-semibold">Análisis Radar del Jugador</h3>
                 </div>
 
                 <p className="text-gray-300 mb-6">
-                  Visualize {playerData?.name}'s performance across multiple statistical categories in an interactive
-                  radar chart.
+                  Visualiza el rendimiento de {playerData?.name} en múltiples categorías estadísticas en un gráfico
+                  radar interactivo.
                 </p>
 
                 {/* Visual elements suggesting a radar chart */}
@@ -598,7 +603,7 @@ export default function PlayerPage() {
                   href="/analytics/idea-3"
                   className="inline-flex items-center bg-gradient-to-r from-blue-600 to-blue-800 text-white px-5 py-3 rounded-lg hover:opacity-90 transition-opacity"
                 >
-                  View Radar Analysis
+                  Ver Análisis Radar
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </div>
@@ -609,19 +614,19 @@ export default function PlayerPage() {
                   <div className="bg-purple-600 rounded-full p-2 mr-3">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
-                  <h3 className="text-xl font-semibold">Performance Metrics</h3>
+                  <h3 className="text-xl font-semibold">Métricas de Rendimiento</h3>
                 </div>
 
                 <div className="space-y-6 mb-6">
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-gray-300">Offensive Impact</span>
+                      <span className="text-gray-300">Impacto Ofensivo</span>
                       <span className="text-green-400 font-medium">
                         {Number.parseFloat(stats?.PTS?.toFixed(1) || "0") > 20
-                          ? "Elite"
+                          ? "Élite"
                           : Number.parseFloat(stats?.PTS?.toFixed(1) || "0") > 15
-                            ? "Strong"
-                            : "Average"}
+                            ? "Fuerte"
+                            : "Promedio"}
                       </span>
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
@@ -636,13 +641,13 @@ export default function PlayerPage() {
 
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-gray-300">Playmaking</span>
+                      <span className="text-gray-300">Creación de Juego</span>
                       <span className="text-blue-400 font-medium">
                         {Number.parseFloat(stats?.AST?.toFixed(1) || "0") > 7
-                          ? "Elite"
+                          ? "Élite"
                           : Number.parseFloat(stats?.AST?.toFixed(1) || "0") > 4
-                            ? "Strong"
-                            : "Average"}
+                            ? "Fuerte"
+                            : "Promedio"}
                       </span>
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
@@ -657,13 +662,13 @@ export default function PlayerPage() {
 
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span className="text-gray-300">Shooting Efficiency</span>
+                      <span className="text-gray-300">Eficiencia de Tiro</span>
                       <span className="text-yellow-400 font-medium">
                         {Number.parseFloat((stats?.FG_PCT * 100)?.toFixed(1) || "0") > 50
-                          ? "Elite"
+                          ? "Élite"
                           : Number.parseFloat((stats?.FG_PCT * 100)?.toFixed(1) || "0") > 45
-                            ? "Strong"
-                            : "Average"}
+                            ? "Fuerte"
+                            : "Promedio"}
                       </span>
                     </div>
                     <div className="w-full bg-gray-700 h-2 rounded-full overflow-hidden">
@@ -685,7 +690,7 @@ export default function PlayerPage() {
       {/* Footer */}
       <footer className="w-full bg-gray-900 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
+          <p>© {new Date().getFullYear()} Análisis de Baloncesto. TFG Guillermo</p>
         </div>
       </footer>
     </div>

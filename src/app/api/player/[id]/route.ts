@@ -2,9 +2,40 @@ import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { playersData } from "@/app/players-data"
 
-// Usar una única instancia de Prisma para evitar memory leaks en desarrollo
-const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV === "development") global.prisma = prisma
+// Use a single Prisma instance to avoid memory leaks in development
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV === "development") globalForPrisma.prisma = prisma
+
+// Define types for better type safety
+type PlayerStats = {
+  Game_ID: number
+  MIN: number
+  FGM: number
+  FGA: number
+  FG_PCT: number
+  FG3M: number
+  FG3A: number
+  FG3_PCT: number
+  FTM: number
+  FTA: number
+  FT_PCT: number
+  OREB: number
+  DREB: number
+  REB: number
+  AST: number
+  STL: number
+  BLK: number
+  TOV: number
+  PF: number
+  PTS: number
+  PLUS_MINUS: number
+  [key: string]: number
+}
+
+type PlayerAverages = {
+  [key: string]: number
+}
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
@@ -14,102 +45,162 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 })
     }
 
-    // Buscar el nombre del jugador en la tabla playersteams
-    let playerName = null
-    const playerInfo = await prisma.playersteams.findFirst({
-      where: { player_id: playerId },
-      select: { player_name: true },
-    })
+    // Get player name from database
+    const playerInfo = await getPlayerName(playerId)
 
-    if (playerInfo) {
-      playerName = playerInfo.player_name
-    }
-
-    // Convertir el ID a string para buscar en playersData
-    const playerIdStr = playerId.toString()
-
-    // Si no tenemos nombre en la base de datos, intentar obtenerlo de players-data.ts
-    if (!playerName) {
-      playerName = playersData[playerIdStr]?.name || `Player #${playerId}`
-    }
-
-    // Buscar estadísticas del jugador
-    const stats = await prisma.stats.findMany({
-      where: { Player_ID: playerId },
-      select: {
-        Game_ID: true,
-        MIN: true,
-        FGM: true,
-        FGA: true,
-        FG_PCT: true,
-        FG3M: true,
-        FG3A: true,
-        FG3_PCT: true,
-        FTM: true,
-        FTA: true,
-        FT_PCT: true,
-        OREB: true,
-        DREB: true,
-        REB: true,
-        AST: true,
-        STL: true,
-        BLK: true,
-        TOV: true,
-        PF: true,
-        PTS: true,
-        PLUS_MINUS: true,
-      },
-    })
+    // Get player stats
+    const stats = await getPlayerStats(playerId)
 
     if (stats.length === 0) {
-      return NextResponse.json({ message: "No stats found for this player" })
+      return NextResponse.json({
+        playerId,
+        name: playerInfo.name,
+        image: playerInfo.image,
+        message: "No stats found for this player",
+      })
     }
 
-    // Calcular totales
+    // Calculate statistics
     const totalGames = stats.length
-    const totalStats: Record<string, number> = {}
-    stats.forEach((game) => {
-      ;(Object.keys(game) as Array<keyof typeof game>).forEach((key) => {
-        if (typeof game[key] === "number") {
-          totalStats[key] = (totalStats[key] || 0) + (game[key] as number)
-        }
-      })
-    })
+    const totalStats = calculateTotalStats(stats)
+    const playerAverages = calculateAverages(totalStats, totalGames)
 
-    // Calcular promedios
-    const playerAverages: Record<string, number> = {}
-    Object.keys(totalStats).forEach((key) => {
-      playerAverages[key] = totalStats[key] / totalGames
-    })
-
-    // Calcular estadísticas avanzadas
-    const possessions = totalStats.FGA + 0.44 * totalStats.FTA + totalStats.TOV
-    const ptsGenerated = totalStats.PTS + totalStats.AST * (2 * (1 - totalStats.FG3_PCT) + 3 * totalStats.FG3_PCT)
-    const OffRtg = (possessions / ptsGenerated) * 100 || 0
-    const TS = totalStats.PTS / (2 * (totalStats.FGA + 0.44 * totalStats.FTA)) || 0
-    const eFG = (totalStats.FGM + 0.5 * totalStats.FG3M) / totalStats.FGA || 0
-    const ASTtoTO = totalStats.AST / totalStats.TOV || 0
-    const TOVpercent = (totalStats.TOV / possessions) * 100 || 0
-    const USG = ((totalStats.FGA + 0.44 * totalStats.FTA + totalStats.TOV) * 100) / (totalStats.MIN * 100) || 0
-
-    playerAverages.OffRtg = OffRtg
-    playerAverages.TS = TS
-    playerAverages.eFG = eFG
-    playerAverages.ASTtoTO = ASTtoTO
-    playerAverages.TOVpercent = TOVpercent
-    playerAverages.USG = USG
-
-    // Obtener la imagen del jugador desde el archivo players-data.ts
-    const playerImage = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
+    // Add advanced statistics
+    const advancedStats = calculateAdvancedStats(totalStats)
+    const finalAverages = { ...playerAverages, ...advancedStats }
 
     return NextResponse.json({
       playerId,
-      name: playerName,
-      image: playerImage,
-      averages: playerAverages,
+      name: playerInfo.name,
+      image: playerInfo.image,
+      averages: finalAverages,
     })
   } catch (error) {
     console.error("Error fetching player stats:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+// Helper functions for better organization
+async function getPlayerName(playerId: number) {
+  // Try to get player name from database
+  const playerInfo = await prisma.playersteams.findFirst({
+    where: { player_id: playerId },
+    select: { player_name: true },
+  })
+
+  const playerIdStr = playerId.toString()
+  let name = playerInfo?.player_name || null
+
+  // Fallback to playersData if not found in database
+  if (!name) {
+    name = playersData[playerIdStr]?.name || `Player #${playerId}`
+  }
+
+  // Get player image
+  const image = playersData[playerIdStr]?.image || "/placeholder.svg?height=400&width=300"
+
+  return { name, image }
+}
+
+async function getPlayerStats(playerId: number) {
+  return prisma.stats.findMany({
+    where: { Player_ID: playerId },
+    select: {
+      Game_ID: true,
+      MIN: true,
+      FGM: true,
+      FGA: true,
+      FG_PCT: true,
+      FG3M: true,
+      FG3A: true,
+      FG3_PCT: true,
+      FTM: true,
+      FTA: true,
+      FT_PCT: true,
+      OREB: true,
+      DREB: true,
+      REB: true,
+      AST: true,
+      STL: true,
+      BLK: true,
+      TOV: true,
+      PF: true,
+      PTS: true,
+      PLUS_MINUS: true,
+    },
+  }) as Promise<PlayerStats[]>
+}
+
+function calculateTotalStats(stats: PlayerStats[]) {
+  const totalStats: Record<string, number> = {}
+
+  stats.forEach((game) => {
+    Object.entries(game).forEach(([key, value]) => {
+      if (typeof value === "number") {
+        totalStats[key] = (totalStats[key] || 0) + value
+      }
+    })
+  })
+
+  return totalStats
+}
+
+function calculateAverages(totalStats: Record<string, number>, totalGames: number) {
+  const averages: PlayerAverages = {}
+
+  // Excluir los porcentajes de tiro, ya que los calcularemos correctamente en calculateAdvancedStats
+  const percentageFields = ["FG_PCT", "FG3_PCT", "FT_PCT"]
+
+  Object.entries(totalStats).forEach(([key, value]) => {
+    // Solo calcular promedios para campos que no son porcentajes
+    if (!percentageFields.includes(key)) {
+      averages[key] = value / totalGames
+    }
+  })
+
+  return averages
+}
+
+function calculateAdvancedStats(totalStats: Record<string, number>) {
+  // Avoid division by zero
+  const safeDiv = (a: number, b: number) => (b === 0 ? 0 : a / b)
+
+  // Calculate possessions (an estimate)
+  const possessions = totalStats.FGA + 0.44 * totalStats.FTA - totalStats.OREB + totalStats.TOV
+
+  // Calculate correct shooting percentages
+  const FG_PCT = safeDiv(totalStats.FGM, totalStats.FGA)
+  const FG3_PCT = safeDiv(totalStats.FG3M, totalStats.FG3A)
+  const FT_PCT = safeDiv(totalStats.FTM, totalStats.FTA)
+
+  // Calculate points generated (points + potential points from assists)
+  const ptsPerAssist = 2 * (1 - FG3_PCT) + 3 * FG3_PCT
+  const ptsGenerated = totalStats.PTS + totalStats.AST * ptsPerAssist
+
+  // Advanced statistics
+  return {
+    // Correct shooting percentages
+    FG_PCT,
+    FG3_PCT,
+    FT_PCT,
+
+    // Offensive Rating (points per 100 possessions)
+    OffRtg: safeDiv(ptsGenerated * 100, possessions),
+
+    // True Shooting Percentage
+    TS: safeDiv(totalStats.PTS, 2 * (totalStats.FGA + 0.44 * totalStats.FTA)),
+
+    // Effective Field Goal Percentage
+    eFG: safeDiv(totalStats.FGM + 0.5 * totalStats.FG3M, totalStats.FGA),
+
+    // Assist to Turnover Ratio
+    ASTtoTO: safeDiv(totalStats.AST, totalStats.TOV),
+
+    // Turnover Percentage
+    TOVpercent: safeDiv(totalStats.TOV * 100, possessions),
+
+    // Usage Rate
+    USG: safeDiv((totalStats.FGA + 0.44 * totalStats.FTA + totalStats.TOV) * 100, totalStats.MIN * 100),
   }
 }

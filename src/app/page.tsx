@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 import {
   ChevronRight,
   BarChart3,
@@ -32,6 +33,8 @@ import {
   Dumbbell,
   Brain,
   Sparkles,
+  Info,
+  BarChart2,
 } from "lucide-react"
 
 // Definir la interfaz para los tipos de datos
@@ -60,6 +63,7 @@ interface AdvancedStat {
   name: string
   value: string
   id: string
+  description: string // Añadimos descripción para el tooltip
 }
 
 // Mapa de abreviaturas de equipos a nombres completos
@@ -68,7 +72,7 @@ const teamNames: { [key: string]: string } = {
   BOS: "Boston Celtics",
   MIA: "Miami Heat",
   NYK: "New York Knicks",
-  GSW: "Golden State Warriors",
+  GSW: "Majadahonda",
   CHI: "Chicago Bulls",
   PHI: "Philadelphia 76ers",
   DAL: "Dallas Mavericks",
@@ -96,6 +100,28 @@ const teamNames: { [key: string]: string } = {
   DEN: "Denver Nuggets",
 } as const
 
+// Función para obtener la abreviatura del equipo configurado
+const getTeamAbbreviation = (teamFullName: string): string => {
+  // Buscar la abreviatura que corresponde al nombre del equipo configurado
+  for (const [abbr, name] of Object.entries(teamNames)) {
+    if (name === teamFullName) {
+      return abbr
+    }
+  }
+  // Si no se encuentra, devolver el nombre completo
+  return teamFullName
+}
+
+// Función para obtener el nombre de visualización del equipo
+const getDisplayTeamName = (abbr: string): string => {
+  // Si la abreviatura corresponde al equipo configurado, devolver el nombre configurado
+  if (abbr === getTeamAbbreviation(TEAM_NAME) || abbr === TEAM_NAME) {
+    return TEAM_NAME
+  }
+  // De lo contrario, devolver el nombre del mapa
+  return teamNames[abbr] || abbr
+}
+
 // Colores para equipos (simplificado, solo algunos equipos)
 const teamColors: { [key: string]: string } = {
   LAL: "bg-purple-700",
@@ -115,9 +141,9 @@ const groupGamesByMonth = (games: Game[]) => {
   const grouped: { [key: string]: Game[] } = {}
 
   games.forEach((game) => {
-    // Convertir la fecha a un formato de mes (ej: "January 2023")
+    // Convertir la fecha a un formato de mes (ej: "Enero 2023")
     const date = new Date(game.GAME_DATE)
-    const monthYear = date.toLocaleString("default", { month: "long", year: "numeric" })
+    const monthYear = date.toLocaleString("es-ES", { month: "long", year: "numeric" })
 
     if (!grouped[monthYear]) {
       grouped[monthYear] = []
@@ -127,6 +153,15 @@ const groupGamesByMonth = (games: Game[]) => {
   })
 
   return grouped
+}
+
+// Función para formatear el ID de temporada
+const formatSeasonId = (seasonId: string): string => {
+  // Si comienza con "2" y tiene 5 dígitos, elimina el primer carácter
+  if (seasonId.startsWith("2") && seasonId.length === 5) {
+    return seasonId.substring(1)
+  }
+  return seasonId
 }
 
 export default function Home() {
@@ -141,6 +176,7 @@ export default function Home() {
   const [advancedStats, setAdvancedStats] = useState<AdvancedStat[]>([])
   const [loading, setLoading] = useState(true)
   const [isAdvancedStatsProvisional, setIsAdvancedStatsProvisional] = useState(false)
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null)
 
   // Estados adicionales para la sección de equipo mejorada
   const [playerSearchTerm, setPlayerSearchTerm] = useState("")
@@ -175,22 +211,30 @@ export default function Home() {
         const simpleStatsData = await simpleStatsResponse.json()
         if (simpleStatsData.averages) {
           const formattedStats: SimpleStat[] = [
-            { name: "Points per game", value: simpleStatsData.averages.PTS.toFixed(1), id: "ppg" },
-            { name: "Field goal %", value: `${(simpleStatsData.averages.FG_PCT).toFixed(1)}%`, id: "fg_percentage" },
+            { name: "Puntos por partido", value: simpleStatsData.averages.PTS.toFixed(1), id: "ppg" },
             {
-              name: "3-point %",
+              name: "Porcentaje de tiros de campo",
+              value: `${(simpleStatsData.averages.FG_PCT).toFixed(1)}%`,
+              id: "fg_percentage",
+            },
+            {
+              name: "Porcentaje de triples",
               value: `${(simpleStatsData.averages.FG3_PCT).toFixed(1)}%`,
               id: "three_point_percentage",
             },
-            { name: "Free throw %", value: `${(simpleStatsData.averages.FT_PCT).toFixed(1)}%`, id: "ft_percentage" },
-            { name: "Total rebounds", value: simpleStatsData.averages.REB.toFixed(1), id: "total_rebounds" },
-            { name: "Offensive rebounds", value: simpleStatsData.averages.OREB.toFixed(1), id: "offensive_rebounds" },
-            { name: "Defensive rebounds", value: simpleStatsData.averages.DREB.toFixed(1), id: "defensive_rebounds" },
-            { name: "Assists per game", value: simpleStatsData.averages.AST.toFixed(1), id: "apg" },
-            { name: "Steals per game", value: simpleStatsData.averages.STL.toFixed(1), id: "spg" },
-            { name: "Blocks per game", value: simpleStatsData.averages.BLK.toFixed(1), id: "bpg" },
-            { name: "Turnovers", value: simpleStatsData.averages.TOV.toFixed(1), id: "turnovers" },
-            { name: "Fouls", value: simpleStatsData.averages.PF.toFixed(1), id: "fouls" },
+            {
+              name: "Porcentaje de tiros libres",
+              value: `${(simpleStatsData.averages.FT_PCT).toFixed(1)}%`,
+              id: "ft_percentage",
+            },
+            { name: "Rebotes totales", value: simpleStatsData.averages.REB.toFixed(1), id: "total_rebounds" },
+            { name: "Rebotes ofensivos", value: simpleStatsData.averages.OREB.toFixed(1), id: "offensive_rebounds" },
+            { name: "Rebotes defensivos", value: simpleStatsData.averages.DREB.toFixed(1), id: "defensive_rebounds" },
+            { name: "Asistencias por partido", value: simpleStatsData.averages.AST.toFixed(1), id: "apg" },
+            { name: "Robos por partido", value: simpleStatsData.averages.STL.toFixed(1), id: "spg" },
+            { name: "Tapones por partido", value: simpleStatsData.averages.BLK.toFixed(1), id: "bpg" },
+            { name: "Pérdidas", value: simpleStatsData.averages.TOV.toFixed(1), id: "turnovers" },
+            { name: "Faltas", value: simpleStatsData.averages.PF.toFixed(1), id: "fouls" },
           ]
           setSimpleStats(formattedStats)
         }
@@ -200,25 +244,63 @@ export default function Home() {
         const advancedStatsData = await advancedStatsResponse.json()
         if (advancedStatsData.advancedStats) {
           const formattedAdvancedStats: AdvancedStat[] = [
-            { name: "Offensive Rating", value: advancedStatsData.advancedStats.OfRtg.toFixed(1), id: "ofrtg" },
-            { name: "Defensive Rating", value: advancedStatsData.advancedStats.DfRtg.toFixed(1), id: "dfrtg" },
-            { name: "Net Rating", value: advancedStatsData.advancedStats.netRtg.toFixed(1), id: "netrtg" },
-            { name: "Pace", value: advancedStatsData.advancedStats.pace.toFixed(1), id: "pace" },
-            { name: "Effective FG%", value: `${(advancedStatsData.advancedStats.eFG * 100).toFixed(1)}%`, id: "efg" },
-            { name: "True Shooting%", value: `${(advancedStatsData.advancedStats.TS * 100).toFixed(1)}%`, id: "ts" },
-            { name: "Turnover%", value: `${advancedStatsData.advancedStats.TOVpercent.toFixed(1)}%`, id: "tovpct" },
             {
-              name: "Assist/TO Ratio",
+              name: "Rating Ofensivo",
+              value: advancedStatsData.advancedStats.OfRtg.toFixed(1),
+              id: "ofrtg",
+              description: "Puntos anotados por cada 100 posesiones. Mide la eficiencia ofensiva del equipo.",
+            },
+            {
+              name: "Ritmo",
+              value: advancedStatsData.advancedStats.pace.toFixed(1),
+              id: "pace",
+              description: "Número de posesiones por 48 minutos. Indica la velocidad a la que juega el equipo.",
+            },
+            {
+              name: "% Tiro Efectivo",
+              value: `${(advancedStatsData.advancedStats.eFG * 100).toFixed(1)}%`,
+              id: "efg",
+              description:
+                "Porcentaje de tiro que tiene en cuenta el valor adicional de los triples. Fórmula: (FGM + 0.5 * 3PM) / FGA",
+            },
+            {
+              name: "% Tiro Real",
+              value: `${(advancedStatsData.advancedStats.TS * 100).toFixed(1)}%`,
+              id: "ts",
+              description:
+                "Medida de eficiencia de tiro que tiene en cuenta tiros de campo y tiros libres. Fórmula: Puntos / (2 * (FGA + 0.44 * FTA))",
+            },
+            {
+              name: "% Pérdidas",
+              value: `${advancedStatsData.advancedStats.TOVpercent.toFixed(1)}%`,
+              id: "tovpct",
+              description: "Porcentaje de posesiones que terminan en pérdida de balón.",
+            },
+            {
+              name: "Ratio Asistencias/Pérdidas",
               value: advancedStatsData.advancedStats.assistToTOV.toFixed(2),
               id: "ast_to_ratio",
+              description: "Relación entre asistencias y pérdidas. Un valor mayor indica mejor cuidado del balón.",
             },
-            { name: "Free Throw Rate", value: advancedStatsData.advancedStats.freeThrowRate.toFixed(1), id: "ft_rate" },
             {
-              name: "Possessions",
-              value: Math.round(advancedStatsData.advancedStats.possessions).toString(),
-              id: "possessions",
+              name: "Ratio de Tiros Libres",
+              value: advancedStatsData.advancedStats.freeThrowRate.toFixed(1),
+              id: "ft_rate",
+              description:
+                "Proporción de tiros libres intentados por tiro de campo intentado. Indica la capacidad para generar tiros libres.",
             },
-            { name: "Effective FGA", value: advancedStatsData.advancedStats.EFGA.toFixed(1), id: "efga" },
+            {
+              name: "Posesiones por Partido",
+              value: advancedStatsData.advancedStats.possessionsPerGame.toFixed(1),
+              id: "possessions",
+              description: "Número promedio de posesiones por partido. Fórmula: (FGA + 0.44 * FTA + TOV) / Partidos",
+            },
+            {
+              name: "Intentos de Tiro Efectivos",
+              value: advancedStatsData.advancedStats.EFGA.toFixed(1),
+              id: "efga",
+              description: "Intentos de tiro ajustados por el valor de los tiros libres. Fórmula: FGA + 0.44 * FTA",
+            },
           ]
           setAdvancedStats(formattedAdvancedStats)
           setIsAdvancedStatsProvisional(false)
@@ -269,9 +351,9 @@ export default function Home() {
   // Función para determinar si un valor estadístico es destacable
   const isHighlightedStat = (stat: SimpleStat | AdvancedStat) => {
     // Ejemplos de criterios para destacar estadísticas
-    if (stat.name.includes("Points") && Number.parseFloat(stat.value) > 100) return true
-    if (stat.name.includes("Field goal") && Number.parseFloat(stat.value) > 45) return true
-    if (stat.name.includes("3-point") && Number.parseFloat(stat.value) > 35) return true
+    if (stat.name.includes("Puntos") && Number.parseFloat(stat.value) > 100) return true
+    if (stat.name.includes("Porcentaje de tiros") && Number.parseFloat(stat.value) > 45) return true
+    if (stat.name.includes("triples") && Number.parseFloat(stat.value) > 35) return true
     if (stat.name.includes("Rating") && Number.parseFloat(stat.value) > 110) return true
     return false
   }
@@ -282,7 +364,7 @@ export default function Home() {
 
   const formatTeamNames = (matchup: string) => {
     let teams = matchup.split(" ")
-    teams = teams.map((team) => teamNames[team] || team)
+    teams = teams.map((team) => getDisplayTeamName(team))
     return teams.join(" ")
   }
 
@@ -313,12 +395,17 @@ export default function Home() {
     })
   }
 
+  // Función para mostrar/ocultar tooltip
+  const toggleTooltip = (statId: string | null) => {
+    setActiveTooltip(statId)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen text-white bg-[#0a0a2a]">
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <h1 className="text-2xl font-semibold">Loading...</h1>
+          <h1 className="text-2xl font-semibold">Cargando...</h1>
         </div>
       </div>
     )
@@ -327,10 +414,34 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center min-h-screen text-white bg-[#0a0a2a]">
       {/* Header Banner */}
-      <div className="w-full bg-gradient-to-r from-blue-800 to-purple-900 py-8 mb-6">
+      <div className="w-full bg-gradient-to-r from-blue-800 to-purple-900 py-8 mb-0">
         <div className="max-w-7xl mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold text-center">Basketball Analytics</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-center">Análisis de Baloncesto</h1>
           <p className="text-center mt-2 text-blue-100">TFG Guillermo Gómez de Segura</p>
+        </div>
+      </div>
+
+      {/* Team and Season Info - Diseño mejorado */}
+      <div className="w-full bg-gradient-to-r from-gray-900/90 via-gray-800/90 to-gray-900/90 py-4 mb-6 border-t border-b border-blue-900/30 backdrop-blur-sm shadow-md">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-between">
+            <div className="flex items-center mb-2 md:mb-0">
+              <BarChart2 className="h-5 w-5 text-blue-400 mr-3" />
+              <div className="flex items-center">
+                <span className="text-gray-400 mr-2 text-sm md:text-base">Análisis de</span>
+                <span className="font-semibold text-white text-base md:text-lg tracking-wide">{TEAM_NAME}</span>
+              </div>
+            </div>
+
+            <div className="h-8 border-l border-blue-800/50 mx-4 hidden md:block"></div>
+
+            <div className="flex items-center">
+              <span className="text-gray-400 mr-2 text-sm md:text-base">Temporada</span>
+              <span className="font-semibold text-white text-base md:text-lg tracking-wide bg-blue-900/30 px-3 py-1 rounded-md">
+                {formatSeasonId(SEASON_ID)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -338,17 +449,21 @@ export default function Home() {
       <nav className="w-full bg-gray-800 p-4 mb-8 sticky top-0 z-10 shadow-lg">
         <div className="max-w-7xl mx-auto">
           <ul className="flex justify-between items-center bg-gray-700 rounded-lg p-1">
-            {["Team", "Games", "Analytics"].map((item) => (
-              <li key={item} className="flex-1">
+            {[
+              { id: "Team", label: "Equipo" },
+              { id: "Games", label: "Partidos" },
+              { id: "Analytics", label: "Análisis" },
+            ].map((item) => (
+              <li key={item.id} className="flex-1">
                 <button
-                  onClick={() => setSection(item)}
+                  onClick={() => setSection(item.id)}
                   className={`w-full py-3 text-center rounded-md transition-all duration-300 ${
-                    section === item
+                    section === item.id
                       ? "bg-gradient-to-r from-blue-600 to-purple-700 text-white shadow-lg"
                       : "text-gray-300 hover:bg-gray-600"
                   }`}
                 >
-                  {item}
+                  {item.label}
                 </button>
               </li>
             ))}
@@ -364,7 +479,7 @@ export default function Home() {
               <div className="flex items-center mb-6">
                 <h2 className="text-3xl font-bold flex items-center">
                   <Users className="mr-3 h-8 w-8 text-blue-500" />
-                  Players
+                  Jugadores
                 </h2>
                 <div className="ml-4 h-1 flex-grow bg-blue-600 rounded-full"></div>
               </div>
@@ -375,7 +490,7 @@ export default function Home() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                   <input
                     type="text"
-                    placeholder="Search players..."
+                    placeholder="Buscar jugadores..."
                     value={playerSearchTerm}
                     onChange={(e) => setPlayerSearchTerm(e.target.value)}
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg py-2 pl-10 pr-4 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -390,16 +505,16 @@ export default function Home() {
                       className="bg-transparent text-white border-none focus:outline-none focus:ring-0"
                     >
                       <option value="all" className="bg-gray-800">
-                        All Positions
+                        Todas las posiciones
                       </option>
                       <option value="G" className="bg-gray-800">
-                        Guards
+                        Bases
                       </option>
                       <option value="F" className="bg-gray-800">
-                        Forwards
+                        Aleros
                       </option>
                       <option value="C" className="bg-gray-800">
-                        Centers
+                        Pívots
                       </option>
                     </select>
                   </div>
@@ -413,15 +528,15 @@ export default function Home() {
                     <div className="md:w-2/3 p-8">
                       <div className="inline-flex items-center bg-white/20 px-3 py-1 rounded-full text-sm mb-4">
                         <Star className="h-4 w-4 mr-1 text-yellow-400" />
-                        Featured Player
+                        Jugador Destacado
                       </div>
                       <h3 className="text-3xl font-bold mb-3">{filteredPlayers[0].name}</h3>
-                      <p className="text-blue-200 mb-6">Team leader and key player for the current season.</p>
+                      <p className="text-blue-200 mb-6">Líder del equipo y jugador clave para la temporada actual.</p>
                       <Link
                         href={`/players/${filteredPlayers[0].id}`}
                         className="inline-flex items-center bg-white/10 hover:bg-white/20 px-5 py-3 rounded-lg transition-colors"
                       >
-                        View Player Profile
+                        Ver Perfil del Jugador
                         <ArrowRight className="ml-2 h-5 w-5" />
                       </Link>
                     </div>
@@ -446,7 +561,7 @@ export default function Home() {
                       <div className="relative h-80">
                         <Image
                           src={player.image || "/placeholder.svg?height=400&width=300"}
-                          alt={player.name || `Basketball player`}
+                          alt={player.name || `Jugador de baloncesto`}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-500"
                         />
@@ -455,7 +570,7 @@ export default function Home() {
                           <h3 className="text-xl font-bold truncate">{player.name}</h3>
                           <div className="mt-2 inline-flex items-center bg-blue-600 px-3 py-1 rounded-full text-sm transition-all group-hover:bg-blue-500">
                             <ChevronRight size={16} className="mr-1 group-hover:translate-x-1 transition-transform" />
-                            View Profile
+                            Ver Perfil
                           </div>
                         </div>
                       </div>
@@ -478,7 +593,7 @@ export default function Home() {
                 >
                   <div className="flex items-center justify-center">
                     <BarChart3 className="h-5 w-5 mr-2" />
-                    <span>Simple Stats</span>
+                    <span>Estadísticas Básicas</span>
                   </div>
                 </button>
                 <button
@@ -491,7 +606,7 @@ export default function Home() {
                 >
                   <div className="flex items-center justify-center">
                     <TrendingUp className="h-5 w-5 mr-2" />
-                    <span>Advanced Stats</span>
+                    <span>Estadísticas Avanzadas</span>
                   </div>
                 </button>
               </div>
@@ -506,13 +621,15 @@ export default function Home() {
                   ) : (
                     <TrendingUp className="mr-3 h-8 w-8 text-purple-500" />
                   )}
-                  {activeStatTab === "simple" ? "Simple Stats" : "Advanced Stats"}
+                  {activeStatTab === "simple" ? "Estadísticas Básicas" : "Estadísticas Avanzadas"}
                 </h2>
                 <div
                   className={`ml-4 h-1 flex-grow ${activeStatTab === "simple" ? "bg-green-600" : "bg-purple-600"} rounded-full`}
                 ></div>
                 {activeStatTab === "advanced" && isAdvancedStatsProvisional && (
-                  <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">Provisional data</div>
+                  <div className="ml-4 bg-yellow-600 text-white text-xs px-3 py-1 rounded-full">
+                    Datos provisionales
+                  </div>
                 )}
               </div>
 
@@ -545,6 +662,25 @@ export default function Home() {
                             />
                           </div>
                         )}
+
+                        {/* Icono de información para estadísticas avanzadas */}
+                        {activeStatTab === "advanced" && (
+                          <div
+                            className="absolute top-2 right-2 group"
+                            onMouseEnter={() => toggleTooltip(stat.id)}
+                            onMouseLeave={() => toggleTooltip(null)}
+                          >
+                            <Info className="h-5 w-5 text-blue-400 cursor-help" />
+
+                            {/* Tooltip */}
+                            {activeTooltip === stat.id && (
+                              <div className="absolute right-0 w-64 bg-gray-900 text-white p-3 rounded-lg shadow-lg z-10 text-sm text-left">
+                                <p>{(stat as AdvancedStat).description}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         <p className={`text-lg ${activeStatTab === "simple" ? "text-gray-400" : "text-gray-300"} mb-3`}>
                           {stat.name}
                         </p>
@@ -572,7 +708,7 @@ export default function Home() {
           <>
             <div className="mb-16">
               <div className="flex items-center mb-6">
-                <h2 className="text-3xl font-bold">Played Games</h2>
+                <h2 className="text-3xl font-bold">Partidos Jugados</h2>
                 <div className="ml-4 h-1 flex-grow bg-yellow-600 rounded-full"></div>
               </div>
 
@@ -690,7 +826,7 @@ export default function Home() {
                                               <span className="font-bold text-white">{team}</span>
                                             </div>
                                             <div>
-                                              <p className="font-semibold">{teamNames[team] || team}</p>
+                                              <p className="font-semibold">{getDisplayTeamName(team)}</p>
                                               {game.PTS ? (
                                                 <p className="text-2xl font-bold">{game.PTS}</p>
                                               ) : (
@@ -705,9 +841,7 @@ export default function Home() {
                                           {/* Equipo visitante */}
                                           <div className="flex items-center">
                                             <div>
-                                              <p className="font-semibold text-right">
-                                                {teamNames[opponent] || opponent}
-                                              </p>
+                                              <p className="font-semibold text-right">{getDisplayTeamName(opponent)}</p>
                                               {game.PTS_OPP ? (
                                                 <p className="text-2xl font-bold text-right">{game.PTS_OPP}</p>
                                               ) : (
@@ -882,7 +1016,7 @@ export default function Home() {
                           <div className="bg-gradient-to-br from-blue-600 to-blue-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
                             <BarChart3 className="h-6 w-6 text-white" />
                           </div>
-                          <h3 className="text-xl font-bold">Player Rankings</h3>
+                          <h3 className="text-xl font-bold">Ranking de Jugadores</h3>
                         </div>
                         <p className="text-gray-300 mb-4">
                           Clasificación de jugadores según sus estadísticas clave y métricas de rendimiento.
@@ -910,7 +1044,7 @@ export default function Home() {
                           <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
                             <ArrowUpDown className="h-6 w-6 text-white" />
                           </div>
-                          <h3 className="text-xl font-bold">Win vs Loss Analysis</h3>
+                          <h3 className="text-xl font-bold">Análisis Victoria vs Derrota</h3>
                         </div>
                         <p className="text-gray-300 mb-4">
                           Comparativa de estadísticas y rendimiento de jugadores en victorias frente a derrotas.
@@ -938,7 +1072,7 @@ export default function Home() {
                           <div className="bg-gradient-to-br from-purple-600 to-purple-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
                             <Activity className="h-6 w-6 text-white" />
                           </div>
-                          <h3 className="text-xl font-bold">Player Radar Analysis</h3>
+                          <h3 className="text-xl font-bold">Análisis Radar de Jugadores</h3>
                         </div>
                         <p className="text-gray-300 mb-4">
                           Visualización multidimensional del impacto de los jugadores mediante gráficos de radar.
@@ -966,7 +1100,7 @@ export default function Home() {
                           <div className="bg-gradient-to-br from-fuchsia-600 to-fuchsia-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
                             <TrendingUp className="h-6 w-6 text-white" />
                           </div>
-                          <h3 className="text-xl font-bold">Player Evolution</h3>
+                          <h3 className="text-xl font-bold">Evolución del Jugador</h3>
                         </div>
                         <p className="text-gray-300 mb-4">
                           Análisis de la evolución del rendimiento de los jugadores a lo largo del tiempo.
@@ -994,7 +1128,7 @@ export default function Home() {
                           <div className="bg-gradient-to-br from-green-600 to-green-800 w-12 h-12 rounded-lg flex items-center justify-center mr-4 shadow-inner">
                             <LineChart className="h-6 w-6 text-white" />
                           </div>
-                          <h3 className="text-xl font-bold">Player Consistency</h3>
+                          <h3 className="text-xl font-bold">Consistencia del Jugador</h3>
                         </div>
                         <p className="text-gray-300 mb-4">
                           Evaluación de la consistencia del rendimiento de los jugadores partido a partido.
@@ -1134,7 +1268,7 @@ export default function Home() {
                         Análisis pre-partido
                       </h4>
                       <p className="text-sm text-gray-300">
-                        Utiliza Player Rankings y Radar Analysis para identificar fortalezas y debilidades de los
+                        Utiliza Ranking de Jugadores y Análisis Radar para identificar fortalezas y debilidades de los
                         jugadores antes de un partido. Esto te ayudará a planificar estrategias específicas.
                       </p>
                     </div>
@@ -1145,7 +1279,7 @@ export default function Home() {
                         Desarrollo de jugadores
                       </h4>
                       <p className="text-sm text-gray-300">
-                        Combina Player Evolution y Consistency Analysis para crear planes de entrenamiento
+                        Combina Evolución del Jugador y Análisis de Consistencia para crear planes de entrenamiento
                         personalizados que ayuden a los jugadores a mejorar en áreas específicas y mantener un
                         rendimiento constante.
                       </p>
@@ -1157,8 +1291,9 @@ export default function Home() {
                         Análisis post-partido
                       </h4>
                       <p className="text-sm text-gray-300">
-                        Utiliza Win vs Loss Analysis después de cada partido para identificar patrones y factores clave
-                        que influyeron en el resultado, permitiéndote ajustar estrategias para futuros encuentros.
+                        Utiliza Análisis Victoria vs Derrota después de cada partido para identificar patrones y
+                        factores clave que influyeron en el resultado, permitiéndote ajustar estrategias para futuros
+                        encuentros.
                       </p>
                     </div>
 
@@ -1183,7 +1318,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="w-full bg-gray-900 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
+          <p>© {new Date().getFullYear()} Análisis de Baloncesto. TFG Guillermo</p>
         </div>
       </footer>
     </div>

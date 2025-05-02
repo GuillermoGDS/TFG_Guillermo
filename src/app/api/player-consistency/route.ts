@@ -19,14 +19,12 @@ interface PlayerGameStats {
   FG3_PCT: number
   PLUS_MINUS: number
   // Estadísticas avanzadas
-  OFF_RTG: number
-  DEF_RTG: number
-  NET_RTG: number
-  TS_PCT: number
-  EFG_PCT: number
-  AST_TO_RATIO: number
-  TOV_PCT: number
-  USG_PCT: number
+  OffRtg: number
+  TS: number
+  eFG: number
+  ASTtoTO: number
+  TOVpercent: number
+  USG: number
 }
 
 // Actualizar la interfaz PlayerConsistencyData para incluir estadísticas avanzadas
@@ -44,14 +42,12 @@ interface PlayerConsistencyData {
     FG3_PCT: number
     PLUS_MINUS: number
     // Estadísticas avanzadas
-    OFF_RTG: number
-    DEF_RTG: number
-    NET_RTG: number
-    TS_PCT: number
-    EFG_PCT: number
-    AST_TO_RATIO: number
-    TOV_PCT: number
-    USG_PCT: number
+    OffRtg: number
+    TS: number
+    eFG: number
+    ASTtoTO: number
+    TOVpercent: number
+    USG: number
   }
   standardDeviations: {
     PTS: number
@@ -62,14 +58,12 @@ interface PlayerConsistencyData {
     FG3_PCT: number
     PLUS_MINUS: number
     // Estadísticas avanzadas
-    OFF_RTG: number
-    DEF_RTG: number
-    NET_RTG: number
-    TS_PCT: number
-    EFG_PCT: number
-    AST_TO_RATIO: number
-    TOV_PCT: number
-    USG_PCT: number
+    OffRtg: number
+    TS: number
+    eFG: number
+    ASTtoTO: number
+    TOVpercent: number
+    USG: number
   }
   coefficientOfVariation: {
     PTS: number
@@ -80,14 +74,12 @@ interface PlayerConsistencyData {
     FG3_PCT: number
     PLUS_MINUS: number
     // Estadísticas avanzadas
-    OFF_RTG: number
-    DEF_RTG: number
-    NET_RTG: number
-    TS_PCT: number
-    EFG_PCT: number
-    AST_TO_RATIO: number
-    TOV_PCT: number
-    USG_PCT: number
+    OffRtg: number
+    TS: number
+    eFG: number
+    ASTtoTO: number
+    TOVpercent: number
+    USG: number
   }
   gameData: PlayerGameStats[]
 }
@@ -213,35 +205,41 @@ export async function GET(req: Request): Promise<NextResponse> {
             FG3_PCT: game.FG3A > 0 ? game.FG3M / game.FG3A : 0,
             PLUS_MINUS: game.PLUS_MINUS || 0,
             // Estadísticas avanzadas
-            OFF_RTG: offRtg,
-            DEF_RTG: defRtg,
-            NET_RTG: netRtg,
-            TS_PCT: tsPct,
-            EFG_PCT: efgPct,
-            AST_TO_RATIO: astToRatio,
-            TOV_PCT: tovPct * 100, // Convertir a porcentaje
-            USG_PCT: usgPct,
+            OffRtg: offRtg,
+            TS: tsPct,
+            eFG: efgPct,
+            ASTtoTO: astToRatio,
+            TOVpercent: tovPct * 100, // Convertir a porcentaje
+            USG: usgPct,
           }
         })
+
+        // Ahora, para calcular los promedios correctamente, necesitamos sumar todos los tiros y dividir al final
+        // para los porcentajes de tiro
+        const totalFGM = stats.reduce((sum, game) => sum + (game.FGM || 0), 0)
+        const totalFGA = stats.reduce((sum, game) => sum + (game.FGA || 0), 0)
+        const totalFG3M = stats.reduce((sum, game) => sum + (game.FG3M || 0), 0)
+        const totalFG3A = stats.reduce((sum, game) => sum + (game.FG3A || 0), 0)
+        const totalFTM = stats.reduce((sum, game) => sum + (game.FTM || 0), 0)
+        const totalFTA = stats.reduce((sum, game) => sum + (game.FTA || 0), 0)
 
         // Calculate averages
         const averages = {
           PTS: calculateAverage(gameStats.map((g) => g.PTS)),
           AST: calculateAverage(gameStats.map((g) => g.AST)),
           REB: calculateAverage(gameStats.map((g) => g.REB)),
-          FG_PCT: calculateAverage(gameStats.map((g) => g.FG_PCT)),
-          FT_PCT: calculateAverage(gameStats.map((g) => g.FT_PCT)),
-          FG3_PCT: calculateAverage(gameStats.map((g) => g.FG3_PCT)),
+          // Calcular porcentajes correctamente usando totales
+          FG_PCT: totalFGA > 0 ? totalFGM / totalFGA : 0,
+          FT_PCT: totalFTA > 0 ? totalFTM / totalFTA : 0,
+          FG3_PCT: totalFG3A > 0 ? totalFG3M / totalFG3A : 0,
           PLUS_MINUS: calculateAverage(gameStats.map((g) => g.PLUS_MINUS)),
           // Estadísticas avanzadas
-          OFF_RTG: calculateAverage(gameStats.map((g) => g.OFF_RTG)),
-          DEF_RTG: calculateAverage(gameStats.map((g) => g.DEF_RTG)),
-          NET_RTG: calculateAverage(gameStats.map((g) => g.NET_RTG)),
-          TS_PCT: calculateAverage(gameStats.map((g) => g.TS_PCT)),
-          EFG_PCT: calculateAverage(gameStats.map((g) => g.EFG_PCT)),
-          AST_TO_RATIO: calculateAverage(gameStats.map((g) => g.AST_TO_RATIO)),
-          TOV_PCT: calculateAverage(gameStats.map((g) => g.TOV_PCT)),
-          USG_PCT: calculateAverage(gameStats.map((g) => g.USG_PCT)),
+          OffRtg: calculateAverage(gameStats.map((g) => g.OffRtg)),
+          TS: calculateAverage(gameStats.map((g) => g.TS)),
+          eFG: calculateAverage(gameStats.map((g) => g.eFG)),
+          ASTtoTO: calculateAverage(gameStats.map((g) => g.ASTtoTO)),
+          TOVpercent: calculateAverage(gameStats.map((g) => g.TOVpercent)),
+          USG: calculateAverage(gameStats.map((g) => g.USG)),
         }
 
         // Calculate standard deviations
@@ -275,37 +273,29 @@ export async function GET(req: Request): Promise<NextResponse> {
             averages.PLUS_MINUS,
           ),
           // Estadísticas avanzadas
-          OFF_RTG: calculateStandardDeviation(
-            gameStats.map((g) => g.OFF_RTG),
-            averages.OFF_RTG,
+          OffRtg: calculateStandardDeviation(
+            gameStats.map((g) => g.OffRtg),
+            averages.OffRtg,
           ),
-          DEF_RTG: calculateStandardDeviation(
-            gameStats.map((g) => g.DEF_RTG),
-            averages.DEF_RTG,
+          TS: calculateStandardDeviation(
+            gameStats.map((g) => g.TS),
+            averages.TS,
           ),
-          NET_RTG: calculateStandardDeviation(
-            gameStats.map((g) => g.NET_RTG),
-            averages.NET_RTG,
+          eFG: calculateStandardDeviation(
+            gameStats.map((g) => g.eFG),
+            averages.eFG,
           ),
-          TS_PCT: calculateStandardDeviation(
-            gameStats.map((g) => g.TS_PCT),
-            averages.TS_PCT,
+          ASTtoTO: calculateStandardDeviation(
+            gameStats.map((g) => g.ASTtoTO),
+            averages.ASTtoTO,
           ),
-          EFG_PCT: calculateStandardDeviation(
-            gameStats.map((g) => g.EFG_PCT),
-            averages.EFG_PCT,
+          TOVpercent: calculateStandardDeviation(
+            gameStats.map((g) => g.TOVpercent),
+            averages.TOVpercent,
           ),
-          AST_TO_RATIO: calculateStandardDeviation(
-            gameStats.map((g) => g.AST_TO_RATIO),
-            averages.AST_TO_RATIO,
-          ),
-          TOV_PCT: calculateStandardDeviation(
-            gameStats.map((g) => g.TOV_PCT),
-            averages.TOV_PCT,
-          ),
-          USG_PCT: calculateStandardDeviation(
-            gameStats.map((g) => g.USG_PCT),
-            averages.USG_PCT,
+          USG: calculateStandardDeviation(
+            gameStats.map((g) => g.USG),
+            averages.USG,
           ),
         }
 
@@ -322,17 +312,12 @@ export async function GET(req: Request): Promise<NextResponse> {
               ? standardDeviations.PLUS_MINUS / Math.abs(averages.PLUS_MINUS)
               : standardDeviations.PLUS_MINUS,
           // Estadísticas avanzadas
-          OFF_RTG: averages.OFF_RTG > 0 ? standardDeviations.OFF_RTG / averages.OFF_RTG : 0,
-          DEF_RTG: averages.DEF_RTG > 0 ? standardDeviations.DEF_RTG / averages.DEF_RTG : 0,
-          NET_RTG:
-            Math.abs(averages.NET_RTG) > 1
-              ? standardDeviations.NET_RTG / Math.abs(averages.NET_RTG)
-              : standardDeviations.NET_RTG,
-          TS_PCT: averages.TS_PCT > 0 ? standardDeviations.TS_PCT / averages.TS_PCT : 0,
-          EFG_PCT: averages.EFG_PCT > 0 ? standardDeviations.EFG_PCT / averages.EFG_PCT : 0,
-          AST_TO_RATIO: averages.AST_TO_RATIO > 0 ? standardDeviations.AST_TO_RATIO / averages.AST_TO_RATIO : 0,
-          TOV_PCT: averages.TOV_PCT > 0 ? standardDeviations.TOV_PCT / averages.TOV_PCT : 0,
-          USG_PCT: averages.USG_PCT > 0 ? standardDeviations.USG_PCT / averages.USG_PCT : 0,
+          OffRtg: averages.OffRtg > 0 ? standardDeviations.OffRtg / averages.OffRtg : 0,
+          TS: averages.TS > 0 ? standardDeviations.TS / averages.TS : 0,
+          eFG: averages.eFG > 0 ? standardDeviations.eFG / averages.eFG : 0,
+          ASTtoTO: averages.ASTtoTO > 0 ? standardDeviations.ASTtoTO / averages.ASTtoTO : 0,
+          TOVpercent: averages.TOVpercent > 0 ? standardDeviations.TOVpercent / averages.TOVpercent : 0,
+          USG: averages.USG > 0 ? standardDeviations.USG / averages.USG : 0,
         }
 
         return {
@@ -373,14 +358,12 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     // Añadir categorías de estadísticas avanzadas
     const advancedStatsCategories = [
-      { key: "OFF_RTG", label: "Rating Ofensivo" },
-      { key: "DEF_RTG", label: "Rating Defensivo" },
-      { key: "NET_RTG", label: "Rating Neto" },
-      { key: "TS_PCT", label: "True Shooting %" },
-      { key: "EFG_PCT", label: "Effective FG%" },
-      { key: "AST_TO_RATIO", label: "AST/TO Ratio" },
-      { key: "TOV_PCT", label: "Turnover %" },
-      { key: "USG_PCT", label: "Usage Rate" },
+      { key: "OffRtg", label: "Rating Ofensivo" },
+      { key: "TS", label: "% Tiro Efectivo" },
+      { key: "eFG", label: "% Tiro Efectivo de Campo" },
+      { key: "ASTtoTO", label: "Ratio Asistencias/Pérdidas" },
+      { key: "TOVpercent", label: "% de Pérdidas" },
+      { key: "USG", label: "% de Uso" },
     ]
 
     return NextResponse.json({
@@ -415,14 +398,12 @@ function createEmptyPlayerData(playerId: number, name: string, image: string): P
     FG3_PCT: 0,
     PLUS_MINUS: 0,
     // Estadísticas avanzadas
-    OFF_RTG: 0,
-    DEF_RTG: 0,
-    NET_RTG: 0,
-    TS_PCT: 0,
-    EFG_PCT: 0,
-    AST_TO_RATIO: 0,
-    TOV_PCT: 0,
-    USG_PCT: 0,
+    OffRtg: 0,
+    TS: 0,
+    eFG: 0,
+    ASTtoTO: 0,
+    TOVpercent: 0,
+    USG: 0,
   }
 
   return {
