@@ -370,12 +370,23 @@ export default function Home() {
 
   // Extraer equipos del matchup
   const getTeamsFromMatchup = (matchup: string) => {
-    const teams = matchup.split(" ")
+    // Extract team abbreviations from MATCHUP
+    const parts = matchup.split(" ")
     const isAway = matchup.includes("@")
 
+    // Get the team abbreviations
+    const teamAbbr = parts[0]
+    const opponentAbbr = parts[2]
+
+    // Get full team names
+    const teamName = getDisplayTeamName(teamAbbr)
+    const opponentName = getDisplayTeamName(opponentAbbr)
+
     return {
-      team: teams[0],
-      opponent: teams[2],
+      team: teamAbbr,
+      opponent: opponentAbbr,
+      teamName,
+      opponentName,
       isAway,
     }
   }
@@ -776,59 +787,91 @@ export default function Home() {
                         <h3 className="text-xl font-semibold mb-4 pl-2 border-l-4 border-yellow-500">{month}</h3>
                         <div className="grid gap-4">
                           {monthGames.map((game) => {
-                            const { team, opponent, isAway } = getTeamsFromMatchup(game.MATCHUP)
-                            // Verificar si WL está disponible, si no, mostrar un estado neutral
-                            const hasResult = game.WL !== undefined
-                            const isWin = hasResult && game.WL === "W"
+                            const { team, opponent, teamName, opponentName, isAway } = getTeamsFromMatchup(
+                              game.MATCHUP || "",
+                            )
+
+                            // Determine win/loss status
+                            const hasScores = game.PTS !== undefined && game.PTS_OPP !== undefined
+                            let resultStatus = "unknown"
+                            let isWin = false
+
+                            if (hasScores) {
+                              if (game.PTS > game.PTS_OPP) {
+                                resultStatus = "win"
+                                isWin = true
+                              } else if (game.PTS < game.PTS_OPP) {
+                                resultStatus = "loss"
+                                isWin = false
+                              } else {
+                                resultStatus = "tie"
+                              }
+                            }
 
                             return (
                               <Link href={`/games/${game.Game_ID}`} key={game.Game_ID} className="block">
                                 <div className="bg-gradient-to-r from-gray-800 to-gray-700 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all transform hover:translate-x-1">
-                                  {/* Barra superior con resultado o neutral si no hay resultado */}
+                                  {/* Result indicator bar */}
                                   <div
-                                    className={`h-1 w-full ${hasResult ? (isWin ? "bg-green-500" : "bg-red-500") : "bg-blue-500"}`}
+                                    className={`h-1 w-full ${
+                                      resultStatus === "win"
+                                        ? "bg-green-500"
+                                        : resultStatus === "loss"
+                                          ? "bg-red-500"
+                                          : resultStatus === "tie"
+                                            ? "bg-yellow-500"
+                                            : "bg-blue-500"
+                                    }`}
                                   ></div>
 
                                   <div className="p-4 md:p-6">
                                     <div className="flex flex-col md:flex-row md:items-center">
-                                      {/* Fecha y estado */}
+                                      {/* Date and result badge */}
                                       <div className="mb-4 md:mb-0 md:mr-6 md:w-1/4">
                                         <p className="text-gray-400 text-sm">{formatGameDate(game.GAME_DATE)}</p>
-                                        {hasResult ? (
+                                        {hasScores && (
                                           <div
-                                            className={`inline-flex items-center mt-2 px-2 py-1 rounded-full text-xs ${isWin ? "bg-green-900/50 text-green-400" : "bg-red-900/50 text-red-400"}`}
+                                            className={`inline-flex items-center mt-2 px-2 py-1 rounded-full text-xs ${
+                                              resultStatus === "win"
+                                                ? "bg-green-900/50 text-green-400"
+                                                : resultStatus === "loss"
+                                                  ? "bg-red-900/50 text-red-400"
+                                                  : "bg-yellow-900/50 text-yellow-400"
+                                            }`}
                                           >
-                                            {isWin ? (
+                                            {resultStatus === "win" ? (
                                               <>
                                                 <CheckCircle2 size={12} className="mr-1" /> Victoria
                                               </>
-                                            ) : (
+                                            ) : resultStatus === "loss" ? (
                                               <>
                                                 <XCircle size={12} className="mr-1" /> Derrota
                                               </>
+                                            ) : (
+                                              <>
+                                                <Shield size={12} className="mr-1" /> Empate
+                                              </>
                                             )}
-                                          </div>
-                                        ) : (
-                                          <div className="inline-flex items-center mt-2 px-2 py-1 rounded-full text-xs bg-blue-900/50 text-blue-400">
-                                            <Shield size={12} className="mr-1" /> Partido jugado
                                           </div>
                                         )}
                                       </div>
 
-                                      {/* Equipos y resultado */}
+                                      {/* Teams and scores */}
                                       <div className="flex-grow">
                                         <div className="flex items-center justify-between">
-                                          {/* Equipo local */}
+                                          {/* Home team */}
                                           <div className="flex items-center">
                                             <div
                                               className={`${getTeamColor(team)} w-10 h-10 rounded-full flex items-center justify-center mr-3`}
                                             >
-                                              <span className="font-bold text-white">{team}</span>
+                                              <span className="font-bold text-white">{team.substring(0, 3)}</span>
                                             </div>
                                             <div>
-                                              <p className="font-semibold">{getDisplayTeamName(team)}</p>
-                                              {game.PTS ? (
-                                                <p className="text-2xl font-bold">{game.PTS}</p>
+                                              <p className="font-semibold">{teamName}</p>
+                                              {hasScores ? (
+                                                <p className={`text-2xl font-bold ${isWin ? "text-green-400" : ""}`}>
+                                                  {game.PTS}
+                                                </p>
                                               ) : (
                                                 <p className="text-sm text-gray-400">Puntuación no disponible</p>
                                               )}
@@ -838,12 +881,16 @@ export default function Home() {
                                           {/* VS */}
                                           <div className="mx-4 text-gray-500">VS</div>
 
-                                          {/* Equipo visitante */}
+                                          {/* Away team */}
                                           <div className="flex items-center">
                                             <div>
-                                              <p className="font-semibold text-right">{getDisplayTeamName(opponent)}</p>
-                                              {game.PTS_OPP ? (
-                                                <p className="text-2xl font-bold text-right">{game.PTS_OPP}</p>
+                                              <p className="font-semibold text-right">{opponentName}</p>
+                                              {hasScores ? (
+                                                <p
+                                                  className={`text-2xl font-bold text-right ${!isWin && resultStatus !== "tie" ? "text-green-400" : ""}`}
+                                                >
+                                                  {game.PTS_OPP}
+                                                </p>
                                               ) : (
                                                 <p className="text-sm text-gray-400 text-right">
                                                   Puntuación no disponible
@@ -853,21 +900,16 @@ export default function Home() {
                                             <div
                                               className={`${getTeamColor(opponent)} w-10 h-10 rounded-full flex items-center justify-center ml-3`}
                                             >
-                                              <span className="font-bold text-white">{opponent}</span>
+                                              <span className="font-bold text-white">{opponent.substring(0, 3)}</span>
                                             </div>
                                           </div>
                                         </div>
                                       </div>
 
-                                      {/* Botón de detalles */}
+                                      {/* View details button */}
                                       <div className="mt-4 md:mt-0 md:ml-4 flex justify-end">
-                                        <div className="flex items-center">
-                                          <span className="text-gray-400 mr-2 bg-gray-900 px-3 py-1 rounded-full text-xs">
-                                            {game.Game_ID}
-                                          </span>
-                                          <div className="bg-yellow-600 rounded-full p-2">
-                                            <ChevronRight className="text-white" size={16} />
-                                          </div>
+                                        <div className="bg-yellow-600 rounded-full p-2">
+                                          <ChevronRight className="text-white" size={16} />
                                         </div>
                                       </div>
                                     </div>
