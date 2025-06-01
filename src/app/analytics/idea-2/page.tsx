@@ -507,7 +507,7 @@ export default function WinLossComparison() {
   }
 
   const theme = tabTheme[activeTab]
-  const correlationTheme = tabTheme[correlationTab]
+  
 
   // Get the appropriate correlations based on the selected tab
   const { simpleCorrelations, advancedCorrelations } = calculateStatCorrelations

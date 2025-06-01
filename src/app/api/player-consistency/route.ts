@@ -85,7 +85,7 @@ interface PlayerConsistencyData {
 }
 
 // Modificar la función GET para calcular estadísticas avanzadas
-export async function GET(req: Request): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     // Get all games in the specified season
     const gamesInSeason = await prisma.stats.findMany({
@@ -157,10 +157,8 @@ export async function GET(req: Request): Promise<NextResponse> {
           // Calcular estadísticas avanzadas
           const fga = game.FGA || 0
           const fgm = game.FGM || 0
-          const fg3a = game.FG3A || 0
           const fg3m = game.FG3M || 0
           const fta = game.FTA || 0
-          const ftm = game.FTM || 0
           const pts = game.PTS || 0
           const ast = game.AST || 0
           const tov = game.TOV || 0
@@ -187,12 +185,11 @@ export async function GET(req: Request): Promise<NextResponse> {
           // Offensive Rating (simplificado)
           const offRtg = possessions > 0 ? (pts / possessions) * 100 : 0
 
-          // Defensive Rating (muy simplificado, usando PLUS_MINUS como aproximación)
-          const plusMinus = game.PLUS_MINUS || 0
-          const defRtg = 100 - (plusMinus / (min || 1)) * 10
+          
+          
+         
 
-          // Net Rating
-          const netRtg = offRtg - defRtg
+          
 
           return {
             Game_ID: game.Game_ID,

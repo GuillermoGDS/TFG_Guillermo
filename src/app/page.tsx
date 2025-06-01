@@ -358,15 +358,7 @@ export default function Home() {
     return false
   }
 
-  const formatMatchup = (matchup: string) => {
-    return matchup.replace("@", "vs")
-  }
 
-  const formatTeamNames = (matchup: string) => {
-    let teams = matchup.split(" ")
-    teams = teams.map((team) => getDisplayTeamName(team))
-    return teams.join(" ")
-  }
 
   // Extraer equipos del matchup
   const getTeamsFromMatchup = (matchup: string) => {
@@ -787,7 +779,7 @@ export default function Home() {
                         <h3 className="text-xl font-semibold mb-4 pl-2 border-l-4 border-yellow-500">{month}</h3>
                         <div className="grid gap-4">
                           {monthGames.map((game) => {
-                            const { team, opponent, teamName, opponentName, isAway } = getTeamsFromMatchup(
+                            const { team, opponent, teamName, opponentName } = getTeamsFromMatchup(
                               game.MATCHUP || "",
                             )
 

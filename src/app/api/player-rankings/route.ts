@@ -99,7 +99,7 @@ interface Rankings {
   }
 }
 
-export async function GET(req: Request): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   try {
     // Get all games in the specified season
     const gamesInSeason = await prisma.stats.findMany({

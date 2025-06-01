@@ -131,10 +131,7 @@ export default function PlayerConsistencyAnalysis() {
   // Nuevo estado para controlar el modo de visualización
   const [viewMode, setViewMode] = useState<"charts" | "table">("charts")
   // Nuevo estado para filtrar por rango de fechas
-  const [dateRange, setDateRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: null,
-    end: null,
-  })
+  
   // Nuevo estado para mostrar/ocultar el panel de información
   const [showInfoPanel, setShowInfoPanel] = useState(false)
   // Nuevo estado para controlar si se muestra la guía introductoria
@@ -706,7 +703,7 @@ export default function PlayerConsistencyAnalysis() {
     // Scale values to chart dimensions
     const valueRange = Math.max(Math.max(...values) - Math.min(...values), stdDev * 4, 1)
     const valueMin = Math.max(0, mean - valueRange / 2) // Center around mean, ensure non-negative
-    const valueMax = valueMin + valueRange
+    
 
     const dateRange = dates[dates.length - 1].getTime() - dates[0].getTime()
     const dateMin = dates[0].getTime()
@@ -1724,14 +1721,4 @@ export default function PlayerConsistencyAnalysis() {
   )
 }
 
-function calculateQuantile(sortedValues: number[], q: number) {
-  const pos = (sortedValues.length - 1) * q
-  const base = Math.floor(pos)
-  const rest = pos - base
 
-  if (sortedValues[base + 1] !== undefined) {
-    return sortedValues[base] + rest * (sortedValues[base + 1] - sortedValues[base])
-  } else {
-    return sortedValues[base]
-  }
-}

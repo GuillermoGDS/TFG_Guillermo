@@ -137,8 +137,7 @@ export default function PlayerPage() {
   // Determinar las estadísticas destacadas para el jugador
   const getTopStats = () => {
     const sortedStats = [...allSimpleStats].sort((a, b) => {
-      const aValue = typeof a.value === "string" ? Number.parseFloat(a.value) : a.value
-      const bValue = typeof b.value === "string" ? Number.parseFloat(b.value) : b.value
+      
 
       // Normalizar los valores para comparación
       const getNormalizedValue = (stat: { name: string; value: string }) => {

@@ -28,7 +28,7 @@ interface TeamStats {
   games: Set<string | number>
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     // Get all games in the specified season
     const gamesInSeason = await prisma.stats.findMany({

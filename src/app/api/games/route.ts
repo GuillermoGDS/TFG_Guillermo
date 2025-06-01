@@ -75,9 +75,7 @@ export async function GET() {
           calculatedWL = "L"
         }
 
-        // Extract team names from matchups for better display
-        const ourMatchupParts = game.MATCHUP?.split(" ") || []
-        const opponentMatchupParts = opponentMatchup?.split(" ") || []
+      
 
         return {
           ...game,

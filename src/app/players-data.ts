@@ -4,7 +4,7 @@ export const playersData: Record<string, { image: string; name: string }> = {
     name: "LeBron James",
   },
   "201939": {
-    image: "/201939.png",
+    image: "/prueba_foto.jpg",
     name: "Guillermo Gomez",
   },
   "1626172": {

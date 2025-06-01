@@ -166,10 +166,7 @@ const getDisplayTeamName = (abbr: string): string => {
   return teamNames[abbr as keyof typeof teamNames] || abbr
 }
 
-// Función para obtener color de equipo
-const getTeamColor = (teamCode: string) => {
-  return teamColors[teamCode as keyof typeof teamColors] || teamColors.default
-}
+
 
 // Formatear fecha para mostrar
 const formatGameDate = (dateString: string) => {
@@ -223,13 +220,7 @@ export default function GameDetails() {
     setActiveTooltip(statId)
   }
 
-  // Función para formatear valores estadísticos
-  const formatStatValue = (value: number, isPercentage = false): string => {
-    if (isPercentage) {
-      return `${(value * 100).toFixed(1)}%`
-    }
-    return value.toFixed(1)
-  }
+
 
   // Función para comparar estadísticas y determinar cuál equipo es mejor
   const compareStats = (
@@ -286,12 +277,9 @@ export default function GameDetails() {
 
   const {
     gameDate,
-    matchup,
     result,
     teamAbbr,
     opponentAbbr,
-    teamName,
-    teamAbbreviation,
     teamScore,
     opponentScore,
     teamSimpleStats,
