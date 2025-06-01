@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server"
+import {  NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 
@@ -121,7 +121,7 @@ export async function GET() {
 }
 
 // Helper functions to make the code more maintainable
-function calculateTotals(stats: any[]): TeamStats {
+function calculateTotals(stats: TeamStats[]): TeamStats {
   const totals = {
     PTS: 0,
     FGM: 0,
