@@ -69,6 +69,36 @@ interface PlayerStats {
   PLUS_MINUS: number
 }
 
+interface RawPlayerStat {
+  Player_ID: number
+  MIN: number
+  PTS: number
+  FGM: number
+  FGA: number
+  FG3M: number
+  FG3A: number
+  FTM: number
+  FTA: number
+  OREB: number
+  DREB: number
+  REB: number
+  AST: number
+  STL: number
+  BLK: number
+  TOV: number
+  PF: number
+  PLUS_MINUS: number
+}
+
+interface TeamPlayer {
+  player_id: number
+  player_name: string
+}
+
+
+
+
+
 export async function GET(req: Request, { params }: { params: { id: string } }) {
   try {
     const gameId = params.id
@@ -193,7 +223,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 }
 
 // Función para calcular estadísticas simples del equipo
-function calculateTeamSimpleStats(playerStats: any[]): TeamStats {
+function calculateTeamSimpleStats(playerStats: PlayerStats[]): TeamStats {
   const initialStats = {
     PTS: 0,
     FGM: 0,
@@ -251,7 +281,7 @@ function calculateTeamSimpleStats(playerStats: any[]): TeamStats {
   }
 }
 
-function calculateTeamAdvancedStats(teamStats: any[], opponentStats: any[]): AdvancedTeamStats {
+function calculateTeamAdvancedStats(teamStats: PlayerStats[], opponentStats: PlayerStats[]): AdvancedTeamStats {
   // Calcular posesiones (estimación)
   const teamPossessions = teamStats.reduce((acc, player) => {
     return acc + (player.FGA || 0) + 0.44 * (player.FTA || 0) - (player.OREB || 0) + (player.TOV || 0)
@@ -330,7 +360,7 @@ function calculateTeamAdvancedStats(teamStats: any[], opponentStats: any[]): Adv
 }
 
 // Función para formatear estadísticas de jugadores
-function formatPlayerStats(playerStats: any[], teamPlayers: any[]): PlayerStats[] {
+function formatPlayerStats(playerStats: RawPlayerStat[], teamPlayers: TeamPlayer[]): PlayerStats[] {
   // Crear un mapa de ID de jugador a nombre
   const playerNameMap = teamPlayers.reduce(
     (map, player) => {

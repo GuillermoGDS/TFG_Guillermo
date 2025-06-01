@@ -65,20 +65,6 @@ const teamNames: { [key: string]: string } = {
   DEN: "Denver Nuggets",
 } as const
 
-// Colores para equipos
-const teamColors: { [key: string]: string } = {
-  LAL: "bg-purple-700",
-  BOS: "bg-green-700",
-  MIA: "bg-red-700",
-  NYK: "bg-blue-700",
-  GSW: "bg-yellow-600",
-  CHI: "bg-red-600",
-  PHI: "bg-blue-600",
-  DAL: "bg-blue-500",
-  BKN: "bg-gray-800",
-  // Color por defecto para equipos sin color específico
-  default: "bg-gray-600",
-}
 
 // Interfaces para los tipos de datos
 interface TeamStats {

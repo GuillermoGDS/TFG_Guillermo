@@ -142,7 +142,7 @@ export default function AdvancedStatPage({ params }: { params: { id: string } })
             </div>
 
             <div className="p-4 bg-blue-900 bg-opacity-50 rounded-lg mt-6">
-              <h3 className="text-xl font-semibold mb-2">Analyst's Note</h3>
+              <h3 className="text-xl font-semibold mb-2">Analyst&rsquo;s Note</h3>
               <p className="text-gray-300">
                 Advanced statistics like {statDetails.name} provide deeper insights into team and player performance
                 beyond traditional box score stats. They help coaches and analysts understand efficiency and
