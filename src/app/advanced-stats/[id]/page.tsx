@@ -1,3 +1,4 @@
+/*
 import Link from "next/link"
 import { ArrowLeft, TrendingUp } from "lucide-react"
 

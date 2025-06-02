@@ -358,8 +358,6 @@ export default function Home() {
     return false
   }
 
-
-
   // Extraer equipos del matchup
   const getTeamsFromMatchup = (matchup: string) => {
     // Extract team abbreviations from MATCHUP
@@ -640,11 +638,7 @@ export default function Home() {
                 {(activeStatTab === "simple" ? simpleStats : advancedStats).map((stat) => {
                   const isHighlighted = isHighlightedStat(stat)
                   return (
-                    <Link
-                      href={`/${activeStatTab === "simple" ? "simple" : "advanced"}-stats/${stat.id}`}
-                      key={stat.id}
-                      className="block"
-                    >
+                    <div key={stat.id} className="block">
                       <div
                         className={`${
                           activeStatTab === "simple"
@@ -654,9 +648,7 @@ export default function Home() {
                             : isHighlighted
                               ? "bg-gradient-to-br from-blue-800 to-purple-900"
                               : "bg-gradient-to-br from-gray-800 to-gray-700"
-                        } rounded-xl p-6 text-center shadow-lg cursor-pointer transform transition-all hover:scale-105 ${
-                          activeStatTab === "simple" ? "hover:bg-gray-700" : "hover:opacity-90"
-                        } h-full flex flex-col justify-center min-h-[180px] relative overflow-hidden`}
+                        } rounded-xl p-6 text-center shadow-lg h-full flex flex-col justify-center min-h-[180px] relative overflow-hidden`}
                       >
                         {isHighlighted && (
                           <div className="absolute top-2 right-2">
@@ -699,7 +691,7 @@ export default function Home() {
                           </div>
                         )}
                       </div>
-                    </Link>
+                    </div>
                   )
                 })}
               </div>
@@ -779,9 +771,7 @@ export default function Home() {
                         <h3 className="text-xl font-semibold mb-4 pl-2 border-l-4 border-yellow-500">{month}</h3>
                         <div className="grid gap-4">
                           {monthGames.map((game) => {
-                            const { team, opponent, teamName, opponentName } = getTeamsFromMatchup(
-                              game.MATCHUP || "",
-                            )
+                            const { team, opponent, teamName, opponentName } = getTeamsFromMatchup(game.MATCHUP || "")
 
                             // Determine win/loss status
                             const hasScores = game.PTS !== undefined && game.PTS_OPP !== undefined
