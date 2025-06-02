@@ -74,7 +74,7 @@ export default function AdvancedStatPage({ params }: { params: { id: string } })
 
   return (
     <div className="flex flex-col min-h-screen text-white bg-[#0a0a2a]">
-      {/* Header Banner */}
+      {/* Header Banner }
       <div className="w-full bg-gradient-to-r from-blue-700 to-purple-800 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold text-center">{statDetails.name}</h1>
@@ -82,7 +82,7 @@ export default function AdvancedStatPage({ params }: { params: { id: string } })
         </div>
       </div>
 
-      {/* Back Button */}
+      {/* Back Button }
       <div className="max-w-7xl mx-auto px-4 py-6">
         <Link href="/" className="inline-flex items-center text-blue-400 hover:text-blue-300 transition-colors">
           <ArrowLeft className="mr-2 h-5 w-5" />
@@ -90,7 +90,7 @@ export default function AdvancedStatPage({ params }: { params: { id: string } })
         </Link>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content }
       <div className="flex-grow w-full max-w-7xl mx-auto px-4 pb-16">
         <div className="bg-gradient-to-br from-blue-900 to-purple-900 rounded-xl p-8 shadow-lg">
           <div className="flex items-center mb-6">
@@ -134,7 +134,7 @@ export default function AdvancedStatPage({ params }: { params: { id: string } })
               </div>
             </div>
 
-            {/* Placeholder for future chart */}
+            {/* Placeholder for future chart }
             <div className="mt-8">
               <h3 className="text-xl font-semibold mb-4">League Comparison</h3>
               <div className="bg-gray-800 bg-opacity-50 rounded-lg p-4 h-64 flex items-center justify-center">
@@ -154,7 +154,7 @@ export default function AdvancedStatPage({ params }: { params: { id: string } })
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer }
       <footer className="w-full bg-gray-900 py-6 mt-auto">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-400">
           <p>© {new Date().getFullYear()} Basketball Analytics. TFG Guillermo</p>
