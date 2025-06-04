@@ -65,7 +65,6 @@ const teamNames: { [key: string]: string } = {
   DEN: "Denver Nuggets",
 } as const
 
-
 // Interfaces para los tipos de datos
 interface TeamStats {
   PTS: number
@@ -152,8 +151,6 @@ const getDisplayTeamName = (abbr: string): string => {
   return teamNames[abbr as keyof typeof teamNames] || abbr
 }
 
-
-
 // Formatear fecha para mostrar
 const formatGameDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -205,8 +202,6 @@ export default function GameDetails() {
   const toggleTooltip = (statId: string | null) => {
     setActiveTooltip(statId)
   }
-
-
 
   // Función para comparar estadísticas y determinar cuál equipo es mejor
   const compareStats = (
@@ -676,15 +671,18 @@ export default function GameDetails() {
                               <span className="font-medium">{player.player_name}</span>
                             </div>
                           </td>
-                          {playerStatsToShow.map((stat) => (
-                            <td key={`${player.player_id}-${stat.key}`} className="text-center py-3 px-2">
-                              {stat.isPercentage
-                                ? player[stat.key as keyof PlayerStats] > 0
-                                  ? `${(player[stat.key as keyof PlayerStats] * 100).toFixed(1)}%`
-                                  : "-"
-                                : player[stat.key as keyof PlayerStats]}
-                            </td>
-                          ))}
+                          {playerStatsToShow.map((stat) => {
+                            const statValue = player[stat.key as keyof PlayerStats]
+                            return (
+                              <td key={`${player.player_id}-${stat.key}`} className="text-center py-3 px-2">
+                                {stat.isPercentage
+                                  ? typeof statValue === "number" && statValue > 0
+                                    ? `${(statValue * 100).toFixed(1)}%`
+                                    : "-"
+                                  : (statValue ?? 0)}
+                              </td>
+                            )
+                          })}
                         </tr>
                       ))}
                     </tbody>
