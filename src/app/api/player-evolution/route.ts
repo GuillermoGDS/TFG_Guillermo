@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { PrismaClient, type Prisma } from "@prisma/client"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 import { playersData } from "@/app/players-data"
 
-// Use a single Prisma instance to avoid memory leaks in development
-const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV === "development") global.prisma = prisma
+// PrismaClient singleton implementation
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 interface StatPoint {
   date: string
@@ -33,27 +34,25 @@ export async function GET(req: Request): Promise<NextResponse> {
     const playerId = url.searchParams.get("playerId")
     const limit = Number.parseInt(url.searchParams.get("limit") || "20", 10)
 
-    // Base query to get players from the team
-    const basePlayerQuery = {
-      where: {
-        player_team: TEAM_NAME,
-      },
-      select: {
-        player_id: true,
-        player_name: true,
-      },
+    // Build the where clause dynamically
+    // Usar el tipo específico de Prisma para la cláusula where
+    const whereClause: Prisma.playersteamsWhereInput = {
+      player_team: TEAM_NAME,
     }
 
     // If a specific player is requested, filter by player ID
     if (playerId) {
-      basePlayerQuery.where = {
-        ...basePlayerQuery.where,
-        player_id: Number.parseInt(playerId, 10),
-      }
+      whereClause.player_id = Number.parseInt(playerId, 10)
     }
 
     // Get players
-    const players = await prisma.playersteams.findMany(basePlayerQuery)
+    const players = await prisma.playersteams.findMany({
+      where: whereClause,
+      select: {
+        player_id: true,
+        player_name: true,
+      },
+    })
 
     if (players.length === 0) {
       return NextResponse.json({ error: "No players found for this team" }, { status: 404 })
@@ -115,10 +114,10 @@ export async function GET(req: Request): Promise<NextResponse> {
 
           // Add basic stats
           BASIC_STATS.forEach((key) => {
-            if (game[key] !== null && game[key] !== undefined) {
+            if (game[key as keyof typeof game] !== null && game[key as keyof typeof game] !== undefined) {
               stats[key].push({
                 date,
-                value: game[key],
+                value: game[key as keyof typeof game] as number,
               })
             }
           })
@@ -226,8 +225,6 @@ export async function GET(req: Request): Promise<NextResponse> {
       },
       { status: 500 },
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 

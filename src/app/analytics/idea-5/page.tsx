@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import type React from "react"
+import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import {
@@ -23,6 +24,22 @@ import {
   ChevronLeft,
 } from "lucide-react"
 
+// ✅ Definir un tipo para las claves de estadísticas válidas
+type StatKey =
+  | "PTS"
+  | "AST"
+  | "REB"
+  | "FG_PCT"
+  | "FT_PCT"
+  | "FG3_PCT"
+  | "PLUS_MINUS"
+  | "OffRtg"
+  | "TS"
+  | "eFG"
+  | "ASTtoTO"
+  | "TOVpercent"
+  | "USG"
+
 // Actualizar las interfaces para incluir estadísticas avanzadas
 interface PlayerGameStats {
   Game_ID: string
@@ -41,6 +58,8 @@ interface PlayerGameStats {
   ASTtoTO: number
   TOVpercent: number
   USG: number
+  // ✅ Agregar índice de firma para acceso dinámico
+  [key: string]: string | number
 }
 
 interface PlayerConsistencyData {
@@ -48,54 +67,9 @@ interface PlayerConsistencyData {
   name: string
   image: string
   gamesPlayed: number
-  averages: {
-    PTS: number
-    AST: number
-    REB: number
-    FG_PCT: number
-    FT_PCT: number
-    FG3_PCT: number
-    PLUS_MINUS: number
-    // Estadísticas avanzadas
-    OffRtg: number
-    TS: number
-    eFG: number
-    ASTtoTO: number
-    TOVpercent: number
-    USG: number
-  }
-  standardDeviations: {
-    PTS: number
-    AST: number
-    REB: number
-    FG_PCT: number
-    FT_PCT: number
-    FG3_PCT: number
-    PLUS_MINUS: number
-    // Estadísticas avanzadas
-    OffRtg: number
-    TS: number
-    eFG: number
-    ASTtoTO: number
-    TOVpercent: number
-    USG: number
-  }
-  coefficientOfVariation: {
-    PTS: number
-    AST: number
-    REB: number
-    FG_PCT: number
-    FT_PCT: number
-    FG3_PCT: number
-    PLUS_MINUS: number
-    // Estadísticas avanzadas
-    OffRtg: number
-    TS: number
-    eFG: number
-    ASTtoTO: number
-    TOVpercent: number
-    USG: number
-  }
+  averages: Record<StatKey, number>
+  standardDeviations: Record<StatKey, number>
+  coefficientOfVariation: Record<StatKey, number>
   gameData: PlayerGameStats[]
 }
 
@@ -109,7 +83,7 @@ interface ApiResponse {
 
 // Definir la interfaz StatCategory
 interface StatCategory {
-  key: string
+  key: StatKey
   label: string
 }
 
@@ -119,7 +93,7 @@ export default function PlayerConsistencyAnalysis() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerConsistencyData | null>(null)
-  const [selectedStat, setSelectedStat] = useState<string>("PTS")
+  const [selectedStat, setSelectedStat] = useState<StatKey>("PTS")
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"name" | "consistency" | "average">("consistency")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
@@ -131,7 +105,7 @@ export default function PlayerConsistencyAnalysis() {
   // Nuevo estado para controlar el modo de visualización
   const [viewMode, setViewMode] = useState<"charts" | "table">("charts")
   // Nuevo estado para filtrar por rango de fechas
-  
+
   // Nuevo estado para mostrar/ocultar el panel de información
   const [showInfoPanel, setShowInfoPanel] = useState(false)
   // Nuevo estado para controlar si se muestra la guía introductoria
@@ -176,328 +150,8 @@ export default function PlayerConsistencyAnalysis() {
     fetchData()
   }, [activeStatTab])
 
-  // Modificar los useEffect que dibujan los gráficos para incluir viewMode como dependencia
-  // Esto asegurará que los gráficos se vuelvan a dibujar cuando cambiamos de vista
-
-  // Modificar el useEffect para el boxPlot
-  useEffect(() => {
-    if (selectedPlayer && boxPlotCanvasRef && viewMode === "charts") {
-      drawBoxPlot()
-    }
-  }, [selectedPlayer, selectedStat, boxPlotCanvasRef, viewMode])
-
-  // Modificar el useEffect para el scatterPlot
-  useEffect(() => {
-    if (selectedPlayer && scatterPlotCanvasRef && viewMode === "charts") {
-      drawScatterPlot()
-    }
-  }, [selectedPlayer, selectedStat, scatterPlotCanvasRef, viewMode])
-
-  // Modificar el useEffect para el trendChart
-  useEffect(() => {
-    if (selectedPlayer && trendChartCanvasRef && viewMode === "charts") {
-      drawTrendChart()
-    }
-  }, [selectedPlayer, selectedStat, trendChartCanvasRef, viewMode])
-
-  // Añadir un nuevo useEffect que se ejecute cuando cambiemos a la vista de gráficos
-  useEffect(() => {
-    if (viewMode === "charts" && selectedPlayer) {
-      // Pequeño timeout para asegurar que los canvas están montados
-      const timer = setTimeout(() => {
-        if (boxPlotCanvasRef) drawBoxPlot()
-        if (scatterPlotCanvasRef) drawScatterPlot()
-        if (trendChartCanvasRef) drawTrendChart()
-      }, 50)
-
-      return () => clearTimeout(timer)
-    }
-  }, [viewMode, selectedPlayer, selectedStat])
-
-  const handlePlayerSelect = (player: PlayerConsistencyData) => {
-    setSelectedPlayer(player)
-    // Ocultar la introducción cuando se selecciona un jugador
-    setShowIntro(false)
-  }
-
-  const handleStatChange = (stat: string) => {
-    setSelectedStat(stat)
-  }
-
-  const handleSortChange = (sortType: "name" | "consistency" | "average") => {
-    if (sortBy === sortType) {
-      // Toggle direction if clicking the same sort option
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-    } else {
-      setSortBy(sortType)
-      // Default to ascending for name, descending for stats
-      setSortDirection(sortType === "name" ? "asc" : "desc")
-    }
-  }
-
-  const sortPlayers = (players: PlayerConsistencyData[]): PlayerConsistencyData[] => {
-    return [...players].sort((a, b) => {
-      let comparison = 0
-
-      if (sortBy === "name") {
-        comparison = a.name.localeCompare(b.name)
-      } else if (sortBy === "consistency") {
-        // Lower coefficient of variation means more consistent
-        comparison = a.coefficientOfVariation[selectedStat] - b.coefficientOfVariation[selectedStat]
-      } else if (sortBy === "average") {
-        comparison = a.averages[selectedStat] - b.averages[selectedStat]
-      }
-
-      return sortDirection === "asc" ? comparison : -comparison
-    })
-  }
-
-  // Modificar la función formatStatValue para manejar estadísticas avanzadas
-  const formatStatValue = (value: number, statKey: string): string => {
-    if (["FG_PCT", "FT_PCT", "FG3_PCT", "TS", "eFG"].includes(statKey)) {
-      return `${(value * 100).toFixed(1)}%`
-    } else if (["TOVpercent", "USG"].includes(statKey)) {
-      return `${value.toFixed(1)}%` // Estos ya vienen como porcentajes
-    } else if (["OffRtg"].includes(statKey)) {
-      return value.toFixed(1)
-    } else if (statKey === "ASTtoTO") {
-      return value.toFixed(2)
-    } else {
-      return value.toFixed(1)
-    }
-  }
-
-  const getConsistencyRating = (cv: number): { label: string; color: string; icon: JSX.Element } => {
-    // Lower CV means more consistent
-    if (cv < 0.15)
-      return {
-        label: "Muy consistente",
-        color: "text-green-400",
-        icon: <Award className="h-4 w-4" />,
-      }
-    if (cv < 0.25)
-      return {
-        label: "Consistente",
-        color: "text-blue-400",
-        icon: <TrendingUp className="h-4 w-4" />,
-      }
-    if (cv < 0.35)
-      return {
-        label: "Moderado",
-        color: "text-yellow-400",
-        icon: <Activity className="h-4 w-4" />,
-      }
-    if (cv < 0.45)
-      return {
-        label: "Variable",
-        color: "text-orange-400",
-        icon: <ArrowUpDown className="h-4 w-4" />,
-      }
-    return {
-      label: "Muy variable",
-      color: "text-red-400",
-      icon: <TrendingDown className="h-4 w-4" />,
-    }
-  }
-
-  // Función para dibujar el gráfico de tendencia (nuevo)
-  const drawTrendChart = () => {
-    if (!selectedPlayer || !trendChartCanvasRef) return
-
-    const canvas = trendChartCanvasRef
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Set dimensions
-    const width = canvas.width
-    const height = canvas.height
-    const padding = { top: 40, right: 30, bottom: 60, left: 60 }
-    const chartWidth = width - padding.left - padding.right
-    const chartHeight = height - padding.top - padding.bottom
-
-    // Get data for selected stat
-    const gameData = [...selectedPlayer.gameData].sort(
-      (a, b) => new Date(a.GAME_DATE).getTime() - new Date(b.GAME_DATE).getTime(),
-    )
-
-    const values = gameData.map((game) => game[selectedStat])
-    const dates = gameData.map((game) => new Date(game.GAME_DATE))
-
-    // Calculate moving average (5-game window)
-    const movingAverages: number[] = []
-    const windowSize = Math.min(5, values.length)
-
-    for (let i = 0; i < values.length; i++) {
-      let sum = 0
-      let count = 0
-
-      for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
-        sum += values[j]
-        count++
-      }
-
-      movingAverages.push(sum / count)
-    }
-
-    // Calculate statistics
-    const mean = selectedPlayer.averages[selectedStat]
-
-    // Scale values to chart dimensions
-    const maxValue = Math.max(...values, ...movingAverages, mean * 1.2)
-    const minValue = Math.min(...values, ...movingAverages, mean * 0.8, 0)
-    const valueRange = maxValue - minValue
-
-    const dateRange = dates[dates.length - 1].getTime() - dates[0].getTime()
-    const dateMin = dates[0].getTime()
-
-    const scaleY = (value: number) => {
-      return padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight
-    }
-
-    const scaleX = (date: Date) => {
-      return padding.left + ((date.getTime() - dateMin) / dateRange) * chartWidth
-    }
-
-    // Draw axes
-    ctx.strokeStyle = "#666"
-    ctx.lineWidth = 1
-
-    // Y-axis
-    ctx.beginPath()
-    ctx.moveTo(padding.left, padding.top)
-    ctx.lineTo(padding.left, padding.top + chartHeight)
-    ctx.stroke()
-
-    // X-axis
-    ctx.beginPath()
-    ctx.moveTo(padding.left, padding.top + chartHeight)
-    ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight)
-    ctx.stroke()
-
-    // Draw Y-axis labels
-    ctx.fillStyle = "#fff"
-    ctx.font = "12px Arial"
-    ctx.textAlign = "right"
-    ctx.textBaseline = "middle"
-
-    const numYTicks = 5
-    for (let i = 0; i <= numYTicks; i++) {
-      const value = minValue + (valueRange * i) / numYTicks
-      const y = scaleY(value)
-
-      ctx.beginPath()
-      ctx.moveTo(padding.left - 5, y)
-      ctx.lineTo(padding.left, y)
-      ctx.stroke()
-
-      ctx.fillText(formatStatValue(value, selectedStat), padding.left - 10, y)
-    }
-
-    // Draw X-axis labels (dates)
-    ctx.textAlign = "center"
-    ctx.textBaseline = "top"
-
-    const numXTicks = Math.min(6, dates.length)
-    for (let i = 0; i <= numXTicks; i++) {
-      const dateIndex = Math.floor((dates.length - 1) * (i / numXTicks))
-      const date = dates[dateIndex]
-      const x = scaleX(date)
-
-      ctx.beginPath()
-      ctx.moveTo(x, padding.top + chartHeight)
-      ctx.lineTo(x, padding.top + chartHeight + 5)
-      ctx.stroke()
-
-      // Format date as MM/DD
-      const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`
-      ctx.fillText(formattedDate, x, padding.top + chartHeight + 10)
-    }
-
-    // Draw title
-    ctx.fillStyle = "#fff"
-    ctx.font = "14px Arial"
-    ctx.textAlign = "center"
-    ctx.textBaseline = "top"
-    const statLabel =
-      data?.simpleStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
-      data?.advancedStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
-      selectedStat
-    ctx.fillText(`Tendencia de ${statLabel} (últimos partidos)`, width / 2, 10)
-
-    // Draw mean line
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"
-    ctx.lineWidth = 1
-    ctx.setLineDash([5, 3])
-    ctx.beginPath()
-    ctx.moveTo(padding.left, scaleY(mean))
-    ctx.lineTo(padding.left + chartWidth, scaleY(mean))
-    ctx.stroke()
-    ctx.setLineDash([])
-
-    // Draw data points and connect with line
-    ctx.strokeStyle = "rgba(79, 70, 229, 0.6)"
-    ctx.lineWidth = 1.5
-    ctx.beginPath()
-    ctx.moveTo(scaleX(dates[0]), scaleY(values[0]))
-
-    for (let i = 1; i < dates.length; i++) {
-      ctx.lineTo(scaleX(dates[i]), scaleY(values[i]))
-    }
-
-    ctx.stroke()
-
-    // Draw moving average line
-    ctx.strokeStyle = "rgb(220, 38, 38)"
-    ctx.lineWidth = 2.5
-    ctx.beginPath()
-    ctx.moveTo(scaleX(dates[0]), scaleY(movingAverages[0]))
-
-    for (let i = 1; i < dates.length; i++) {
-      ctx.lineTo(scaleX(dates[i]), scaleY(movingAverages[i]))
-    }
-
-    ctx.stroke()
-
-    // Draw points
-    ctx.fillStyle = "#fff"
-    ctx.strokeStyle = "rgba(79, 70, 229, 0.8)"
-    for (let i = 0; i < dates.length; i++) {
-      ctx.beginPath()
-      ctx.arc(scaleX(dates[i]), scaleY(values[i]), 3, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.stroke()
-    }
-
-    // Draw legend
-    const legendY = padding.top + chartHeight + 30
-
-    // Mean line
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"
-    ctx.setLineDash([5, 3])
-    ctx.beginPath()
-    ctx.moveTo(padding.left, legendY)
-    ctx.lineTo(padding.left + 20, legendY)
-    ctx.stroke()
-    ctx.setLineDash([])
-    ctx.fillStyle = "#fff"
-    ctx.textAlign = "left"
-    ctx.fillText("Media", padding.left + 25, legendY)
-
-    // Moving average line
-    ctx.strokeStyle = "rgb(220, 38, 38)"
-    ctx.lineWidth = 2.5
-    ctx.beginPath()
-    ctx.moveTo(padding.left + chartWidth / 2 - 30, legendY)
-    ctx.lineTo(padding.left + chartWidth / 2 - 10, legendY)
-    ctx.stroke()
-    ctx.fillStyle = "#fff"
-    ctx.fillText("Media móvil (5 partidos)", padding.left + chartWidth / 2 - 5, legendY)
-  }
-
-  const drawBoxPlot = () => {
+  // ✅ Convertir las funciones de dibujo en useCallback para evitar warnings de dependencias
+  const drawBoxPlot = useCallback(() => {
     if (!selectedPlayer || !boxPlotCanvasRef) return
 
     const canvas = boxPlotCanvasRef
@@ -515,7 +169,7 @@ export default function PlayerConsistencyAnalysis() {
     const chartHeight = height - padding.top - padding.bottom
 
     // Get data for selected stat
-    const values = selectedPlayer.gameData.map((game) => game[selectedStat])
+    const values = selectedPlayer.gameData.map((game) => game[selectedStat] as number)
     values.sort((a, b) => a - b)
 
     // Calculate box plot values
@@ -669,9 +323,9 @@ export default function PlayerConsistencyAnalysis() {
     ctx.fill()
     ctx.fillStyle = "#fff"
     ctx.fillText("Valores atípicos", padding.left + chartWidth / 2 + 25, legendY + 20)
-  }
+  }, [selectedPlayer, boxPlotCanvasRef, selectedStat, data])
 
-  const drawScatterPlot = () => {
+  const drawScatterPlot = useCallback(() => {
     if (!selectedPlayer || !scatterPlotCanvasRef) return
 
     const canvas = scatterPlotCanvasRef
@@ -693,7 +347,7 @@ export default function PlayerConsistencyAnalysis() {
       (a, b) => new Date(a.GAME_DATE).getTime() - new Date(b.GAME_DATE).getTime(),
     )
 
-    const values = gameData.map((game) => game[selectedStat])
+    const values = gameData.map((game) => game[selectedStat] as number)
     const dates = gameData.map((game) => new Date(game.GAME_DATE))
 
     // Calculate statistics
@@ -703,7 +357,6 @@ export default function PlayerConsistencyAnalysis() {
     // Scale values to chart dimensions
     const valueRange = Math.max(Math.max(...values) - Math.min(...values), stdDev * 4, 1)
     const valueMin = Math.max(0, mean - valueRange / 2) // Center around mean, ensure non-negative
-    
 
     const dateRange = dates[dates.length - 1].getTime() - dates[0].getTime()
     const dateMin = dates[0].getTime()
@@ -880,6 +533,345 @@ export default function PlayerConsistencyAnalysis() {
     ctx.stroke()
     ctx.fillStyle = "#fff"
     ctx.fillText("Valor por partido", padding.left + chartWidth / 2 - 10, legendY + 20)
+  }, [selectedPlayer, scatterPlotCanvasRef, selectedStat, data])
+
+  const drawTrendChart = useCallback(() => {
+    if (!selectedPlayer || !trendChartCanvasRef) return
+
+    const canvas = trendChartCanvasRef
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    // Set dimensions
+    const width = canvas.width
+    const height = canvas.height
+    const padding = { top: 40, right: 30, bottom: 60, left: 60 }
+    const chartWidth = width - padding.left - padding.right
+    const chartHeight = height - padding.top - padding.bottom
+
+    // Get data for selected stat
+    const gameData = [...selectedPlayer.gameData].sort(
+      (a, b) => new Date(a.GAME_DATE).getTime() - new Date(b.GAME_DATE).getTime(),
+    )
+
+    const values = gameData.map((game) => game[selectedStat] as number)
+    const dates = gameData.map((game) => new Date(game.GAME_DATE))
+
+    // Calculate moving average (5-game window)
+    const movingAverages: number[] = []
+    const windowSize = Math.min(5, values.length)
+
+    for (let i = 0; i < values.length; i++) {
+      let sum = 0
+      let count = 0
+
+      for (let j = Math.max(0, i - windowSize + 1); j <= i; j++) {
+        sum += values[j]
+        count++
+      }
+
+      movingAverages.push(sum / count)
+    }
+
+    // Calculate statistics
+    const mean = selectedPlayer.averages[selectedStat]
+
+    // Scale values to chart dimensions
+    const maxValue = Math.max(...values, ...movingAverages, mean * 1.2)
+    const minValue = Math.min(...values, ...movingAverages, mean * 0.8, 0)
+    const valueRange = maxValue - minValue
+
+    const dateRange = dates[dates.length - 1].getTime() - dates[0].getTime()
+    const dateMin = dates[0].getTime()
+
+    const scaleY = (value: number) => {
+      return padding.top + chartHeight - ((value - minValue) / valueRange) * chartHeight
+    }
+
+    const scaleX = (date: Date) => {
+      return padding.left + ((date.getTime() - dateMin) / dateRange) * chartWidth
+    }
+
+    // Draw axes
+    ctx.strokeStyle = "#666"
+    ctx.lineWidth = 1
+
+    // Y-axis
+    ctx.beginPath()
+    ctx.moveTo(padding.left, padding.top)
+    ctx.lineTo(padding.left, padding.top + chartHeight)
+    ctx.stroke()
+
+    // X-axis
+    ctx.beginPath()
+    ctx.moveTo(padding.left, padding.top + chartHeight)
+    ctx.lineTo(padding.left + chartWidth, padding.top + chartHeight)
+    ctx.stroke()
+
+    // Draw Y-axis labels
+    ctx.fillStyle = "#fff"
+    ctx.font = "12px Arial"
+    ctx.textAlign = "right"
+    ctx.textBaseline = "middle"
+
+    const numYTicks = 5
+    for (let i = 0; i <= numYTicks; i++) {
+      const value = minValue + (valueRange * i) / numYTicks
+      const y = scaleY(value)
+
+      ctx.beginPath()
+      ctx.moveTo(padding.left - 5, y)
+      ctx.lineTo(padding.left, y)
+      ctx.stroke()
+
+      ctx.fillText(formatStatValue(value, selectedStat), padding.left - 10, y)
+    }
+
+    // Draw X-axis labels (dates)
+    ctx.textAlign = "center"
+    ctx.textBaseline = "top"
+
+    const numXTicks = Math.min(6, dates.length)
+    for (let i = 0; i <= numXTicks; i++) {
+      const dateIndex = Math.floor((dates.length - 1) * (i / numXTicks))
+      const date = dates[dateIndex]
+      const x = scaleX(date)
+
+      ctx.beginPath()
+      ctx.moveTo(x, padding.top + chartHeight)
+      ctx.lineTo(x, padding.top + chartHeight + 5)
+      ctx.stroke()
+
+      // Format date as MM/DD
+      const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`
+      ctx.fillText(formattedDate, x, padding.top + chartHeight + 10)
+    }
+
+    // Draw title
+    ctx.fillStyle = "#fff"
+    ctx.font = "14px Arial"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "top"
+    const statLabel =
+      data?.simpleStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
+      data?.advancedStatsCategories.find((cat) => cat.key === selectedStat)?.label ||
+      selectedStat
+    ctx.fillText(`Tendencia de ${statLabel} (últimos partidos)`, width / 2, 10)
+
+    // Draw mean line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"
+    ctx.lineWidth = 1
+    ctx.setLineDash([5, 3])
+    ctx.beginPath()
+    ctx.moveTo(padding.left, scaleY(mean))
+    ctx.lineTo(padding.left + chartWidth, scaleY(mean))
+    ctx.stroke()
+    ctx.setLineDash([])
+
+    // Draw data points and connect with line
+    ctx.strokeStyle = "rgba(79, 70, 229, 0.6)"
+    ctx.lineWidth = 1.5
+    ctx.beginPath()
+    ctx.moveTo(scaleX(dates[0]), scaleY(values[0]))
+
+    for (let i = 1; i < dates.length; i++) {
+      ctx.lineTo(scaleX(dates[i]), scaleY(values[i]))
+    }
+
+    ctx.stroke()
+
+    // Draw moving average line
+    ctx.strokeStyle = "rgb(220, 38, 38)"
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.moveTo(scaleX(dates[0]), scaleY(movingAverages[0]))
+
+    for (let i = 1; i < dates.length; i++) {
+      ctx.lineTo(scaleX(dates[i]), scaleY(movingAverages[i]))
+    }
+
+    ctx.stroke()
+
+    // Draw points
+    ctx.fillStyle = "#fff"
+    ctx.strokeStyle = "rgba(79, 70, 229, 0.8)"
+    for (let i = 0; i < dates.length; i++) {
+      ctx.beginPath()
+      ctx.arc(scaleX(dates[i]), scaleY(values[i]), 3, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.stroke()
+    }
+
+    // Draw legend
+    const legendY = padding.top + chartHeight + 30
+
+    // Mean line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"
+    ctx.setLineDash([5, 3])
+    ctx.beginPath()
+    ctx.moveTo(padding.left, legendY)
+    ctx.lineTo(padding.left + 20, legendY)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.fillStyle = "#fff"
+    ctx.textAlign = "left"
+    ctx.fillText("Media", padding.left + 25, legendY)
+
+    // Moving average line
+    ctx.strokeStyle = "rgb(220, 38, 38)"
+    ctx.lineWidth = 2.5
+    ctx.beginPath()
+    ctx.moveTo(padding.left + chartWidth / 2 - 30, legendY)
+    ctx.lineTo(padding.left + chartWidth / 2 - 10, legendY)
+    ctx.stroke()
+    ctx.fillStyle = "#fff"
+    ctx.fillText("Media móvil (5 partidos)", padding.left + chartWidth / 2 - 5, legendY)
+  }, [selectedPlayer, trendChartCanvasRef, selectedStat, data])
+
+  // Modificar los useEffect que dibujan los gráficos para incluir viewMode como dependencia
+  // Esto asegurará que los gráficos se vuelvan a dibujar cuando cambiamos de vista
+
+  // Modificar el useEffect para el boxPlot
+  useEffect(() => {
+    if (selectedPlayer && boxPlotCanvasRef && viewMode === "charts") {
+      drawBoxPlot()
+    }
+  }, [selectedPlayer, selectedStat, boxPlotCanvasRef, viewMode, drawBoxPlot])
+
+  // Modificar el useEffect para el scatterPlot
+  useEffect(() => {
+    if (selectedPlayer && scatterPlotCanvasRef && viewMode === "charts") {
+      drawScatterPlot()
+    }
+  }, [selectedPlayer, selectedStat, scatterPlotCanvasRef, viewMode, drawScatterPlot])
+
+  // Modificar el useEffect para el trendChart
+  useEffect(() => {
+    if (selectedPlayer && trendChartCanvasRef && viewMode === "charts") {
+      drawTrendChart()
+    }
+  }, [selectedPlayer, selectedStat, trendChartCanvasRef, viewMode, drawTrendChart])
+
+  // Añadir un nuevo useEffect que se ejecute cuando cambiemos a la vista de gráficos
+  useEffect(() => {
+    if (viewMode === "charts" && selectedPlayer) {
+      // Pequeño timeout para asegurar que los canvas están montados
+      const timer = setTimeout(() => {
+        if (boxPlotCanvasRef) drawBoxPlot()
+        if (scatterPlotCanvasRef) drawScatterPlot()
+        if (trendChartCanvasRef) drawTrendChart()
+      }, 50)
+
+      return () => clearTimeout(timer)
+    }
+  }, [
+    viewMode,
+    selectedPlayer,
+    selectedStat,
+    boxPlotCanvasRef,
+    scatterPlotCanvasRef,
+    trendChartCanvasRef,
+    drawBoxPlot,
+    drawScatterPlot,
+    drawTrendChart,
+  ])
+
+  const handlePlayerSelect = (player: PlayerConsistencyData) => {
+    setSelectedPlayer(player)
+    // Ocultar la introducción cuando se selecciona un jugador
+    setShowIntro(false)
+  }
+
+  const handleStatChange = (stat: StatKey) => {
+    setSelectedStat(stat)
+  }
+
+  const handleSortChange = (sortType: "name" | "consistency" | "average") => {
+    if (sortBy === sortType) {
+      // Toggle direction if clicking the same sort option
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+    } else {
+      setSortBy(sortType)
+      // Default to ascending for name, descending for stats
+      setSortDirection(sortType === "name" ? "asc" : "desc")
+    }
+  }
+
+  const sortPlayers = (players: PlayerConsistencyData[]): PlayerConsistencyData[] => {
+    return [...players].sort((a, b) => {
+      let comparison = 0
+
+      if (sortBy === "name") {
+        comparison = a.name.localeCompare(b.name)
+      } else if (sortBy === "consistency") {
+        // ✅ Verificación de tipo segura
+        const aCV = a.coefficientOfVariation[selectedStat]
+        const bCV = b.coefficientOfVariation[selectedStat]
+        if (aCV !== undefined && bCV !== undefined) {
+          comparison = aCV - bCV // Lower coefficient of variation means more consistent
+        }
+      } else if (sortBy === "average") {
+        // ✅ Verificación de tipo segura
+        const aAvg = a.averages[selectedStat]
+        const bAvg = b.averages[selectedStat]
+        if (aAvg !== undefined && bAvg !== undefined) {
+          comparison = aAvg - bAvg
+        }
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison
+    })
+  }
+
+  // Modificar la función formatStatValue para manejar estadísticas avanzadas
+  const formatStatValue = (value: number, statKey: StatKey): string => {
+    if (["FG_PCT", "FT_PCT", "FG3_PCT", "TS", "eFG"].includes(statKey)) {
+      return `${(value * 100).toFixed(1)}%`
+    } else if (["TOVpercent", "USG"].includes(statKey)) {
+      return `${value.toFixed(1)}%` // Estos ya vienen como porcentajes
+    } else if (["OffRtg"].includes(statKey)) {
+      return value.toFixed(1)
+    } else if (statKey === "ASTtoTO") {
+      return value.toFixed(2)
+    } else {
+      return value.toFixed(1)
+    }
+  }
+
+  const getConsistencyRating = (cv: number): { label: string; color: string; icon: React.ReactElement } => {
+    // Lower CV means more consistent
+    if (cv < 0.15)
+      return {
+        label: "Muy consistente",
+        color: "text-green-400",
+        icon: <Award className="h-4 w-4" />,
+      }
+    if (cv < 0.25)
+      return {
+        label: "Consistente",
+        color: "text-blue-400",
+        icon: <TrendingUp className="h-4 w-4" />,
+      }
+    if (cv < 0.35)
+      return {
+        label: "Moderado",
+        color: "text-yellow-400",
+        icon: <Activity className="h-4 w-4" />,
+      }
+    if (cv < 0.45)
+      return {
+        label: "Variable",
+        color: "text-orange-400",
+        icon: <ArrowUpDown className="h-4 w-4" />,
+      }
+    return {
+      label: "Muy variable",
+      color: "text-red-400",
+      icon: <TrendingDown className="h-4 w-4" />,
+    }
   }
 
   const calculateQuantile = (sortedValues: number[], q: number) => {
@@ -1478,7 +1470,7 @@ export default function PlayerConsistencyAnalysis() {
                           {selectedPlayer.gameData
                             .sort((a, b) => new Date(b.GAME_DATE).getTime() - new Date(a.GAME_DATE).getTime())
                             .map((game, index) => {
-                              const value = game[selectedStat]
+                              const value = game[selectedStat] as number
                               const mean = selectedPlayer.averages[selectedStat]
                               const deviation = value - mean
                               const deviationPercentage = mean !== 0 ? (deviation / mean) * 100 : 0
@@ -1527,17 +1519,18 @@ export default function PlayerConsistencyAnalysis() {
                           .sort(([, a], [, b]) => a - b)
                           .slice(0, 2)
                           .map(([key, value]) => {
+                            const statKey = key as StatKey
                             const statLabel =
-                              data.simpleStatsCategories.find((cat) => cat.key === key)?.label ||
-                              data.advancedStatsCategories.find((cat) => cat.key === key)?.label ||
-                              key
+                              data.simpleStatsCategories.find((cat) => cat.key === statKey)?.label ||
+                              data.advancedStatsCategories.find((cat) => cat.key === statKey)?.label ||
+                              statKey
                             return (
-                              <div key={`consistent-${key}`} className="bg-gray-800 rounded-lg p-3">
+                              <div key={`consistent-${statKey}`} className="bg-gray-800 rounded-lg p-3">
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="font-medium">{statLabel}</span>
                                   <span className="text-green-400">
-                                    {formatStatValue(selectedPlayer.averages[key], key)} ±{" "}
-                                    {formatStatValue(selectedPlayer.standardDeviations[key], key)}
+                                    {formatStatValue(selectedPlayer.averages[statKey], statKey)} ±{" "}
+                                    {formatStatValue(selectedPlayer.standardDeviations[statKey], statKey)}
                                   </span>
                                 </div>
                                 <div className="w-full bg-gray-600 rounded-full h-2">
@@ -1564,17 +1557,18 @@ export default function PlayerConsistencyAnalysis() {
                           .sort(([, a], [, b]) => b - a)
                           .slice(0, 2)
                           .map(([key, value]) => {
+                            const statKey = key as StatKey
                             const statLabel =
-                              data.simpleStatsCategories.find((cat) => cat.key === key)?.label ||
-                              data.advancedStatsCategories.find((cat) => cat.key === key)?.label ||
-                              key
+                              data.simpleStatsCategories.find((cat) => cat.key === statKey)?.label ||
+                              data.advancedStatsCategories.find((cat) => cat.key === statKey)?.label ||
+                              statKey
                             return (
-                              <div key={`variable-${key}`} className="bg-gray-800 rounded-lg p-3">
+                              <div key={`variable-${statKey}`} className="bg-gray-800 rounded-lg p-3">
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="font-medium">{statLabel}</span>
                                   <span className="text-red-400">
-                                    {formatStatValue(selectedPlayer.averages[key], key)} ±{" "}
-                                    {formatStatValue(selectedPlayer.standardDeviations[key], key)}
+                                    {formatStatValue(selectedPlayer.averages[statKey], statKey)} ±{" "}
+                                    {formatStatValue(selectedPlayer.standardDeviations[statKey], statKey)}
                                   </span>
                                 </div>
                                 <div className="w-full bg-gray-600 rounded-full h-2">
@@ -1720,5 +1714,3 @@ export default function PlayerConsistencyAnalysis() {
     </div>
   )
 }
-
-

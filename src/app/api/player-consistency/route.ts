@@ -1,11 +1,12 @@
-import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
+import { NextResponse } from "next/server"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 import { playersData } from "@/app/players-data"
 
-// Use a single Prisma instance to avoid memory leaks in development
-const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV === "development") global.prisma = prisma
+// PrismaClient singleton implementation
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 // Actualizar la interfaz PlayerGameStats para incluir estadísticas avanzadas
 interface PlayerGameStats {
@@ -185,21 +186,15 @@ export async function GET(): Promise<NextResponse> {
           // Offensive Rating (simplificado)
           const offRtg = possessions > 0 ? (pts / possessions) * 100 : 0
 
-          
-          
-         
-
-          
-
           return {
             Game_ID: game.Game_ID,
-            GAME_DATE: game.GAME_DATE,
+            GAME_DATE: game.GAME_DATE ? game.GAME_DATE.toISOString() : "",
             PTS: game.PTS || 0,
             AST: game.AST || 0,
             REB: game.REB || 0,
-            FG_PCT: game.FGA > 0 ? game.FGM / game.FGA : 0,
-            FT_PCT: game.FTA > 0 ? game.FTM / game.FTA : 0,
-            FG3_PCT: game.FG3A > 0 ? game.FG3M / game.FG3A : 0,
+            FG_PCT: (game.FGA || 0) > 0 ? (game.FGM || 0) / (game.FGA || 0) : 0,
+            FT_PCT: (game.FTA || 0) > 0 ? (game.FTM || 0) / (game.FTA || 0) : 0,
+            FG3_PCT: (game.FG3A || 0) > 0 ? (game.FG3M || 0) / (game.FG3A || 0) : 0,
             PLUS_MINUS: game.PLUS_MINUS || 0,
             // Estadísticas avanzadas
             OffRtg: offRtg,
@@ -379,8 +374,6 @@ export async function GET(): Promise<NextResponse> {
       },
       { status: 500 },
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }
 

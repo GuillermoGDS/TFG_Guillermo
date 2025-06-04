@@ -2,9 +2,10 @@ import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 
-// Usar una única instancia de Prisma para evitar memory leaks en desarrollo
-const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV === "development") global.prisma = prisma
+// PrismaClient singleton implementation
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 // Importar el módulo de imágenes de jugadores de manera dinámica para evitar problemas de inicialización
 async function getPlayerImage(playerId: number): Promise<{ image: string; name?: string }> {
@@ -312,7 +313,5 @@ export async function GET(): Promise<NextResponse> {
       },
       { status: 500 },
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

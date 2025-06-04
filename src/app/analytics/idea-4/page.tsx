@@ -127,9 +127,6 @@ const timeRangeOptions = [
   { key: "30", label: "Últimos 30 Partidos" },
 ]
 
-// Modificar la función calculateTrend para que acepte un parámetro de estadística opcional
-// y devuelva también el jugador para facilitar el uso en la vista de tendencias
-
 export default function PlayerEvolution() {
   const [data, setData] = useState<ApiResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -224,7 +221,7 @@ export default function PlayerEvolution() {
     }
 
     fetchData()
-  }, [selectedStat, timeRange])
+  }, [selectedStat, timeRange, selectedPlayers.length, statCategory])
 
   // Handle mouse move on individual chart
   const handleChartMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -946,10 +943,22 @@ export default function PlayerEvolution() {
   // Get selected player
   const selectedPlayer = data.players.find((p) => p.playerId === selectedPlayers[0])
 
-  // Calculate trend for selected player
+  // ✅ Función calculateTrend mejorada con verificación de tipos
   const calculateTrend = (player: PlayerEvolution, statKey: string = selectedStat) => {
     const statValues = player.stats[statKey]
-    if (!statValues || statValues.length < 4) return { value: 0, percentage: 0, isPositive: false }
+    if (!statValues || statValues.length < 4) {
+      return {
+        value: 0,
+        percentage: 0,
+        isPositive: false,
+        player: player,
+        trend: {
+          value: 0,
+          percentage: 0,
+          isPositive: false,
+        },
+      }
+    }
 
     // Usar los últimos 3 partidos para el valor actual
     const recentGames = statValues.slice(-3)
@@ -1597,8 +1606,12 @@ export default function PlayerEvolution() {
                   {data.players
                     .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
                     .map((player) => calculateTrend(player))
-                    .filter((result) => result.player && result.trend.isPositive)
-                    .sort((a, b) => b.trend.percentage - a.trend.percentage)
+                    .filter((result) => result.player && result.trend && result.trend.isPositive)
+                    .sort((a, b) => {
+                      // ✅ Verificación de seguridad antes de acceder a trend.percentage
+                      if (!a.trend || !b.trend) return 0
+                      return b.trend.percentage - a.trend.percentage
+                    })
                     .slice(0, 5)
                     .map((result) => (
                       <div
@@ -1627,16 +1640,16 @@ export default function PlayerEvolution() {
                           </div>
                           <div className="text-right">
                             <div className="text-2xl font-bold text-green-400">
-                              +{formatStatValue(result.trend.value)}
+                              +{formatStatValue(result.trend?.value || 0)}
                             </div>
-                            <div className="text-sm text-green-300">+{Math.round(result.trend.percentage)}%</div>
+                            <div className="text-sm text-green-300">+{Math.round(result.trend?.percentage || 0)}%</div>
                           </div>
                         </div>
                         {/* Barra de progreso */}
                         <div className="mt-3 bg-gray-800 rounded-full h-2 overflow-hidden">
                           <div
                             className="bg-gradient-to-r from-green-500 to-green-300 h-full"
-                            style={{ width: `${Math.min(100, result.trend.percentage)}%` }}
+                            style={{ width: `${Math.min(100, result.trend?.percentage || 0)}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1644,7 +1657,7 @@ export default function PlayerEvolution() {
                   {data.players
                     .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
                     .map((player) => calculateTrend(player))
-                    .filter((result) => result.player && result.trend.isPositive).length === 0 && (
+                    .filter((result) => result.player && result.trend && result.trend.isPositive).length === 0 && (
                     <div className="text-center py-6 text-gray-400">
                       No hay jugadores con tendencia positiva en esta estadística
                     </div>
@@ -1662,8 +1675,14 @@ export default function PlayerEvolution() {
                   {data.players
                     .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
                     .map((player) => calculateTrend(player))
-                    .filter((result) => result.player && !result.trend.isPositive && result.trend.value !== 0)
-                    .sort((a, b) => a.trend.percentage - b.trend.percentage)
+                    .filter(
+                      (result) => result.player && result.trend && !result.trend.isPositive && result.trend.value !== 0,
+                    )
+                    .sort((a, b) => {
+                      // ✅ Verificación de seguridad antes de acceder a trend.percentage
+                      if (!a.trend || !b.trend) return 0
+                      return a.trend.percentage - b.trend.percentage
+                    })
                     .slice(0, 5)
                     .map((result) => (
                       <div
@@ -1691,15 +1710,17 @@ export default function PlayerEvolution() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-red-400">{formatStatValue(result.trend.value)}</div>
-                            <div className="text-sm text-red-300">{Math.round(result.trend.percentage)}%</div>
+                            <div className="text-2xl font-bold text-red-400">
+                              {formatStatValue(result.trend?.value || 0)}
+                            </div>
+                            <div className="text-sm text-red-300">{Math.round(result.trend?.percentage || 0)}%</div>
                           </div>
                         </div>
                         {/* Barra de progreso */}
                         <div className="mt-3 bg-gray-800 rounded-full h-2 overflow-hidden">
                           <div
                             className="bg-gradient-to-r from-red-500 to-red-300 h-full"
-                            style={{ width: `${Math.min(100, Math.abs(result.trend.percentage))}%` }}
+                            style={{ width: `${Math.min(100, Math.abs(result.trend?.percentage || 0))}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1707,8 +1728,9 @@ export default function PlayerEvolution() {
                   {data.players
                     .filter((player) => player.stats[selectedStat] && player.stats[selectedStat].length >= 4)
                     .map((player) => calculateTrend(player))
-                    .filter((result) => result.player && !result.trend.isPositive && result.trend.value !== 0)
-                    .length === 0 && (
+                    .filter(
+                      (result) => result.player && result.trend && !result.trend.isPositive && result.trend.value !== 0,
+                    ).length === 0 && (
                     <div className="text-center py-6 text-gray-400">
                       No hay jugadores con tendencia negativa en esta estadística
                     </div>
@@ -1760,7 +1782,7 @@ export default function PlayerEvolution() {
                           .filter((player) => player.stats[a.key] && player.stats[a.key].length >= 4)
                           .map((player) => {
                             const trend = calculateTrend(player, a.key)
-                            return trend.trend.isPositive ? trend.trend.percentage : 0
+                            return trend.trend && trend.trend.isPositive ? trend.trend.percentage : 0
                           })
                           .reduce((sum, percentage, _, arr) => sum + percentage / arr.length, 0)
 
@@ -1768,7 +1790,7 @@ export default function PlayerEvolution() {
                           .filter((player) => player.stats[b.key] && player.stats[b.key].length >= 4)
                           .map((player) => {
                             const trend = calculateTrend(player, b.key)
-                            return trend.trend.isPositive ? trend.trend.percentage : 0
+                            return trend.trend && trend.trend.isPositive ? trend.trend.percentage : 0
                           })
                           .reduce((sum, percentage, _, arr) => sum + percentage / arr.length, 0)
 
@@ -1780,7 +1802,7 @@ export default function PlayerEvolution() {
                           .filter((player) => player.stats[stat.key] && player.stats[stat.key].length >= 4)
                           .map((player) => {
                             const trend = calculateTrend(player, stat.key)
-                            return trend.trend.isPositive ? trend.trend.percentage : 0
+                            return trend.trend && trend.trend.isPositive ? trend.trend.percentage : 0
                           })
                           .reduce((sum, percentage, _, arr) => sum + percentage / arr.length, 0)
 
@@ -1799,7 +1821,7 @@ export default function PlayerEvolution() {
                         .filter((player) => player.stats[stat.key] && player.stats[stat.key].length >= 4)
                         .map((player) => {
                           const trend = calculateTrend(player, stat.key)
-                          return trend.trend.isPositive
+                          return trend.trend && trend.trend.isPositive
                         })
                         .filter(Boolean)
 

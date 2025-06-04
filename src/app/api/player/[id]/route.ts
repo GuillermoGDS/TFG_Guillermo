@@ -9,37 +9,39 @@ if (process.env.NODE_ENV === "development") globalForPrisma.prisma = prisma
 
 // Define types for better type safety
 type PlayerStats = {
-  Game_ID: number
-  MIN: number
-  FGM: number
-  FGA: number
-  FG_PCT: number
-  FG3M: number
-  FG3A: number
-  FG3_PCT: number
-  FTM: number
-  FTA: number
-  FT_PCT: number
-  OREB: number
-  DREB: number
-  REB: number
-  AST: number
-  STL: number
-  BLK: number
-  TOV: number
-  PF: number
-  PTS: number
-  PLUS_MINUS: number
-  [key: string]: number
+  Game_ID: string // Cambiar de number a string
+  MIN: number | null
+  FGM: number | null
+  FGA: number | null
+  FG_PCT: number | null
+  FG3M: number | null
+  FG3A: number | null
+  FG3_PCT: number | null
+  FTM: number | null
+  FTA: number | null
+  FT_PCT: number | null
+  OREB: number | null
+  DREB: number | null
+  REB: number | null
+  AST: number | null
+  STL: number | null
+  BLK: number | null
+  TOV: number | null
+  PF: number | null
+  PTS: number | null
+  PLUS_MINUS: number | null
 }
 
 type PlayerAverages = {
   [key: string]: number
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+// ✅ Cambio principal: params ahora es Promise<{ id: string }>
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const playerId = Number.parseInt(params.id)
+    // ✅ Await params antes de acceder a sus propiedades
+    const { id } = await params
+    const playerId = Number.parseInt(id)
 
     if (isNaN(playerId)) {
       return NextResponse.json({ error: "Invalid player ID" }, { status: 400 })
@@ -129,7 +131,7 @@ async function getPlayerStats(playerId: number) {
       PTS: true,
       PLUS_MINUS: true,
     },
-  }) as Promise<PlayerStats[]>
+  })
 }
 
 function calculateTotalStats(stats: PlayerStats[]) {
@@ -137,7 +139,7 @@ function calculateTotalStats(stats: PlayerStats[]) {
 
   stats.forEach((game) => {
     Object.entries(game).forEach(([key, value]) => {
-      if (typeof value === "number") {
+      if (typeof value === "number" && value !== null) {
         totalStats[key] = (totalStats[key] || 0) + value
       }
     })

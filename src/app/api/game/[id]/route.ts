@@ -69,39 +69,60 @@ interface PlayerStats {
   PLUS_MINUS: number
 }
 
+// ✅ Actualizar RawPlayerStat para que coincida con los datos de Prisma
 interface RawPlayerStat {
   Player_ID: number
-  MIN: number
-  PTS: number
-  FGM: number
-  FGA: number
-  FG3M: number
-  FG3A: number
-  FTM: number
-  FTA: number
-  OREB: number
-  DREB: number
-  REB: number
-  AST: number
-  STL: number
-  BLK: number
-  TOV: number
-  PF: number
-  PLUS_MINUS: number
+  MIN: number | null
+  PTS: number | null
+  FGM: number | null
+  FGA: number | null
+  FG3M: number | null
+  FG3A: number | null
+  FTM: number | null
+  FTA: number | null
+  OREB: number | null
+  DREB: number | null
+  REB: number | null
+  AST: number | null
+  STL: number | null
+  BLK: number | null
+  TOV: number | null
+  PF: number | null
+  PLUS_MINUS: number | null
+}
+
+// ✅ Nueva interfaz para los datos de Prisma (con propiedades nullable)
+interface PrismaPlayerStat {
+  Player_ID: number
+  MIN: number | null
+  PTS: number | null
+  FGM: number | null
+  FGA: number | null
+  FG3M: number | null
+  FG3A: number | null
+  FTM: number | null
+  FTA: number | null
+  OREB: number | null
+  DREB: number | null
+  REB: number | null
+  AST: number | null
+  STL: number | null
+  BLK: number | null
+  TOV: number | null
+  PF: number | null
+  PLUS_MINUS: number | null
 }
 
 interface TeamPlayer {
   player_id: number
-  player_name: string
+  player_name: string | null
 }
 
-
-
-
-
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+// ✅ Cambio principal: params ahora es Promise<{ id: string }>
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const gameId = params.id
+    // ✅ Await params antes de acceder a sus propiedades
+    const { id: gameId } = await params
 
     // Verificar que el partido existe
     const gameExists = await prisma.stats.findFirst({
@@ -176,13 +197,17 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return !teamPlayerIds.includes(stat.Player_ID)
     })
 
+    // ✅ Convertir datos de Prisma a formato esperado antes de calcular estadísticas
+    const convertedTeamStats = convertPrismaStatsToPlayerStats(teamStats, teamPlayers)
+    const convertedOpponentStats = convertPrismaStatsToPlayerStats(opponentStats, [])
+
     // Calcular estadísticas simples del equipo
-    const teamSimpleStats = calculateTeamSimpleStats(teamStats)
-    const opponentSimpleStats = calculateTeamSimpleStats(opponentStats)
+    const teamSimpleStats = calculateTeamSimpleStats(convertedTeamStats)
+    const opponentSimpleStats = calculateTeamSimpleStats(convertedOpponentStats)
 
     // Calcular estadísticas avanzadas
-    const teamAdvancedStats = calculateTeamAdvancedStats(teamStats, opponentStats)
-    const opponentAdvancedStats = calculateTeamAdvancedStats(opponentStats, teamStats)
+    const teamAdvancedStats = calculateTeamAdvancedStats(convertedTeamStats, convertedOpponentStats)
+    const opponentAdvancedStats = calculateTeamAdvancedStats(convertedOpponentStats, convertedTeamStats)
 
     // Formatear estadísticas de jugadores
     const formattedPlayerStats = formatPlayerStats(teamPlayerStats, teamPlayers)
@@ -193,8 +218,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     const result = teamScore > opponentScore ? "W" : teamScore < opponentScore ? "L" : "T"
 
     // Determinar el nombre del equipo oponente
-    // Si el equipo en el matchup no es nuestro equipo, entonces ese es el oponente
-    // Si el equipo en el matchup es nuestro equipo, entonces el oponente es el otro equipo
     const isOurTeamInMatchup = matchupTeamAbbr === TEAM_ABBR
     const actualOpponentAbbr = isOurTeamInMatchup ? opponentAbbr : matchupTeamAbbr
 
@@ -220,6 +243,50 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     console.error("Error fetching game details:", error)
     return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 })
   }
+}
+
+// ✅ Nueva función para convertir datos de Prisma a PlayerStats
+function convertPrismaStatsToPlayerStats(prismaStats: PrismaPlayerStat[], teamPlayers: TeamPlayer[]): PlayerStats[] {
+  const playerNameMap = teamPlayers.reduce(
+    (map, player) => {
+      if (player.player_name) {
+        map[player.player_id] = player.player_name
+      }
+      return map
+    },
+    {} as Record<number, string>,
+  )
+
+  return prismaStats.map((stat) => {
+    const playerId = stat.Player_ID.toString()
+    const playerInfo = playersData[playerId]
+
+    return {
+      player_id: stat.Player_ID,
+      player_name: playerInfo?.name || playerNameMap[stat.Player_ID] || `Jugador ${stat.Player_ID}`,
+      player_image: playerInfo?.image || undefined,
+      MIN: stat.MIN || 0,
+      PTS: stat.PTS || 0,
+      FGM: stat.FGM || 0,
+      FGA: stat.FGA || 0,
+      FG_PCT: stat.FGA && stat.FGA > 0 && stat.FGM ? Number((stat.FGM / stat.FGA).toFixed(3)) : 0,
+      FG3M: stat.FG3M || 0,
+      FG3A: stat.FG3A || 0,
+      FG3_PCT: stat.FG3A && stat.FG3A > 0 && stat.FG3M ? Number((stat.FG3M / stat.FG3A).toFixed(3)) : 0,
+      FTM: stat.FTM || 0,
+      FTA: stat.FTA || 0,
+      FT_PCT: stat.FTA && stat.FTA > 0 && stat.FTM ? Number((stat.FTM / stat.FTA).toFixed(3)) : 0,
+      OREB: stat.OREB || 0,
+      DREB: stat.DREB || 0,
+      REB: stat.REB || 0,
+      AST: stat.AST || 0,
+      STL: stat.STL || 0,
+      BLK: stat.BLK || 0,
+      TOV: stat.TOV || 0,
+      PF: stat.PF || 0,
+      PLUS_MINUS: stat.PLUS_MINUS || 0,
+    }
+  })
 }
 
 // Función para calcular estadísticas simples del equipo
@@ -256,10 +323,13 @@ function calculateTeamSimpleStats(playerStats: PlayerStats[]): TeamStats {
       PTS: acc.PTS + (player.PTS || 0),
       FGM: acc.FGM + (player.FGM || 0),
       FGA: acc.FGA + (player.FGA || 0),
+      FG_PCT: 0, // Se calculará después
       FG3M: acc.FG3M + (player.FG3M || 0),
       FG3A: acc.FG3A + (player.FG3A || 0),
+      FG3_PCT: 0, // Se calculará después
       FTM: acc.FTM + (player.FTM || 0),
       FTA: acc.FTA + (player.FTA || 0),
+      FT_PCT: 0, // Se calculará después
       OREB: acc.OREB + (player.OREB || 0),
       DREB: acc.DREB + (player.DREB || 0),
       REB: acc.REB + (player.REB || 0),
@@ -359,12 +429,14 @@ function calculateTeamAdvancedStats(teamStats: PlayerStats[], opponentStats: Pla
   }
 }
 
-// Función para formatear estadísticas de jugadores
+// ✅ Función para formatear estadísticas de jugadores actualizada para manejar valores nullable
 function formatPlayerStats(playerStats: RawPlayerStat[], teamPlayers: TeamPlayer[]): PlayerStats[] {
   // Crear un mapa de ID de jugador a nombre
   const playerNameMap = teamPlayers.reduce(
     (map, player) => {
-      map[player.player_id] = player.player_name
+      if (player.player_name) {
+        map[player.player_id] = player.player_name
+      }
       return map
     },
     {} as Record<number, string>,
@@ -383,13 +455,13 @@ function formatPlayerStats(playerStats: RawPlayerStat[], teamPlayers: TeamPlayer
         PTS: stat.PTS || 0,
         FGM: stat.FGM || 0,
         FGA: stat.FGA || 0,
-        FG_PCT: stat.FGA > 0 ? Number((stat.FGM / stat.FGA).toFixed(3)) : 0,
+        FG_PCT: stat.FGA && stat.FGA > 0 && stat.FGM ? Number((stat.FGM / stat.FGA).toFixed(3)) : 0,
         FG3M: stat.FG3M || 0,
         FG3A: stat.FG3A || 0,
-        FG3_PCT: stat.FG3A > 0 ? Number((stat.FG3M / stat.FG3A).toFixed(3)) : 0,
+        FG3_PCT: stat.FG3A && stat.FG3A > 0 && stat.FG3M ? Number((stat.FG3M / stat.FG3A).toFixed(3)) : 0,
         FTM: stat.FTM || 0,
         FTA: stat.FTA || 0,
-        FT_PCT: stat.FTA > 0 ? Number((stat.FTM / stat.FTA).toFixed(3)) : 0,
+        FT_PCT: stat.FTA && stat.FTA > 0 && stat.FTM ? Number((stat.FTM / stat.FTA).toFixed(3)) : 0,
         OREB: stat.OREB || 0,
         DREB: stat.DREB || 0,
         REB: stat.REB || 0,

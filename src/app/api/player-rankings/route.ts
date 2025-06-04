@@ -3,9 +3,10 @@ import { PrismaClient } from "@prisma/client"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 import { playersData } from "@/app/players-data"
 
-// Usar una única instancia de Prisma para evitar memory leaks en desarrollo
-const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV === "development") global.prisma = prisma
+// PrismaClient singleton implementation
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 interface PlayerStats {
   PTS: number
@@ -245,7 +246,7 @@ export async function GET(): Promise<NextResponse> {
         const playerData = playersData[playerIdStr]
         const playerImage = playerData?.image || "/placeholder.svg?height=400&width=300"
         // Usar el nombre del objeto playersData si está disponible, de lo contrario usar el nombre de la base de datos
-        const playerName = playerData?.name || player.player_name
+        const playerName = playerData?.name || player.player_name || `Player ${player.player_id}`
 
         return {
           playerId: player.player_id,
@@ -371,7 +372,5 @@ export async function GET(): Promise<NextResponse> {
       },
       { status: 500 },
     )
-  } finally {
-    await prisma.$disconnect()
   }
 }

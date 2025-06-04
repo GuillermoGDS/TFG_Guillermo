@@ -1,14 +1,37 @@
-import {  NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 
 // PrismaClient singleton implementation
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
-export const prisma = globalForPrisma.prisma || new PrismaClient()
+// ✅ Eliminado el "export" - ahora es una constante local
+const prisma = globalForPrisma.prisma || new PrismaClient()
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma
 
 // Types
 interface TeamStats {
+  PTS: number
+  FGM: number
+  FGA: number
+  FG3M: number
+  FG3A: number
+  FTM: number
+  FTA: number
+  REB: number
+  OREB: number
+  DREB: number
+  AST: number
+  STL: number
+  BLK: number
+  TOV: number
+  PF: number
+  PLUS_MINUS: number
+  games: Set<string | number>
+  Game_ID: string
+}
+
+// ✅ Nueva interfaz para los totales que no necesita Game_ID
+interface TeamTotals {
   PTS: number
   FGM: number
   FGA: number
@@ -86,8 +109,29 @@ export async function GET() {
       )
     }
 
-    // Calculate totals across all games
-    const totals = calculateTotals(stats)
+    // Transform Prisma results to TeamStats format
+    const transformedStats: TeamStats[] = stats.map((stat) => ({
+      PTS: stat.PTS ?? 0,
+      FGM: stat.FGM ?? 0,
+      FGA: stat.FGA ?? 0,
+      FG3M: stat.FG3M ?? 0,
+      FG3A: stat.FG3A ?? 0,
+      FTM: stat.FTM ?? 0,
+      FTA: stat.FTA ?? 0,
+      REB: stat.REB ?? 0,
+      OREB: stat.OREB ?? 0,
+      DREB: stat.DREB ?? 0,
+      AST: stat.AST ?? 0,
+      STL: stat.STL ?? 0,
+      BLK: stat.BLK ?? 0,
+      TOV: stat.TOV ?? 0,
+      PF: stat.PF ?? 0,
+      PLUS_MINUS: stat.PLUS_MINUS ?? 0,
+      Game_ID: stat.Game_ID,
+      games: new Set<string | number>(),
+    }))
+
+    const totals = calculateTotals(transformedStats)
     const totalGames = totals.games.size
 
     if (totalGames === 0) {
@@ -120,9 +164,9 @@ export async function GET() {
   }
 }
 
-// Helper functions to make the code more maintainable
-function calculateTotals(stats: TeamStats[]): TeamStats {
-  const totals = {
+// ✅ Actualizar la función para usar TeamTotals en lugar de TeamStats
+function calculateTotals(stats: TeamStats[]): TeamTotals {
+  const totals: TeamTotals = {
     PTS: 0,
     FGM: 0,
     FGA: 0,
@@ -166,7 +210,8 @@ function calculateTotals(stats: TeamStats[]): TeamStats {
   return totals
 }
 
-function calculateAverages(totals: TeamStats, totalGames: number) {
+// ✅ Actualizar la función para usar TeamTotals
+function calculateAverages(totals: TeamTotals, totalGames: number) {
   return {
     PTS: totals.PTS / totalGames,
     FG_PCT: totals.FGA > 0 ? Number.parseFloat(((totals.FGM / totals.FGA) * 100).toFixed(1)) : 0,
@@ -185,7 +230,8 @@ function calculateAverages(totals: TeamStats, totalGames: number) {
   }
 }
 
-function calculateAdvancedStats(totals: TeamStats, totalGames: number) {
+// ✅ Actualizar la función para usar TeamTotals
+function calculateAdvancedStats(totals: TeamTotals, totalGames: number) {
   // Calcular posesiones por juego (no totales)
   const possessionsPerGame = (totals.FGA + 0.44 * totals.FTA + totals.TOV) / totalGames
 

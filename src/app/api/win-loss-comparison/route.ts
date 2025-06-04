@@ -3,9 +3,10 @@ import { PrismaClient } from "@prisma/client"
 import { TEAM_NAME, SEASON_ID } from "@/app/team-config"
 import { playersData } from "@/app/players-data"
 
-// Usar una única instancia de Prisma para evitar memory leaks en desarrollo
-const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV === "development") global.prisma = prisma
+// PrismaClient singleton implementation with proper TypeScript typing
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
+const prisma = globalForPrisma.prisma || new PrismaClient()
+if (process.env.NODE_ENV === "development") globalForPrisma.prisma = prisma
 
 interface PlayerStatsGroup {
   PTS: number
