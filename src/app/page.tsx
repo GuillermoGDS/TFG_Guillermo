@@ -773,16 +773,20 @@ export default function Home() {
                           {monthGames.map((game) => {
                             const { team, opponent, teamName, opponentName } = getTeamsFromMatchup(game.MATCHUP || "")
 
-                            // Determine win/loss status
+                            // Determine win/loss status - FIX: Verificar que los valores no sean undefined
                             const hasScores = game.PTS !== undefined && game.PTS_OPP !== undefined
                             let resultStatus = "unknown"
                             let isWin = false
 
                             if (hasScores) {
-                              if (game.PTS > game.PTS_OPP) {
+                              // Usar valores por defecto de 0 si son undefined (aunque ya verificamos arriba)
+                              const teamPoints = game.PTS ?? 0
+                              const opponentPoints = game.PTS_OPP ?? 0
+
+                              if (teamPoints > opponentPoints) {
                                 resultStatus = "win"
                                 isWin = true
-                              } else if (game.PTS < game.PTS_OPP) {
+                              } else if (teamPoints < opponentPoints) {
                                 resultStatus = "loss"
                                 isWin = false
                               } else {
