@@ -66,38 +66,37 @@ interface AdvancedStat {
   description: string // Añadimos descripción para el tooltip
 }
 
-// Mapa de abreviaturas de equipos a nombres completos
 const teamNames: { [key: string]: string } = {
-  LAL: "Los Angeles Lakers",
-  BOS: "Boston Celtics",
-  MIA: "Miami Heat",
-  NYK: "New York Knicks",
+  LAL: "Rivas",
+  BOS: "Pinto",
+  MIA: "Fuenlabrada",
+  NYK: "Las Rozas",
   GSW: "Majadahonda",
-  CHI: "Chicago Bulls",
-  PHI: "Philadelphia 76ers",
-  DAL: "Dallas Mavericks",
-  TOR: "Toronto Raptors",
-  MIL: "Milwaukee Bucks",
-  PHX: "Phoenix Suns",
-  SAC: "Sacramento Kings",
-  UTA: "Utah Jazz",
-  DET: "Detroit Pistons",
-  IND: "Indiana Pacers",
-  HOU: "Houston Rockets",
-  MEM: "Memphis Grizzlies",
-  MIN: "Minnesota Timberwolves",
-  ORL: "Orlando Magic",
-  ATL: "Atlanta Hawks",
-  CLE: "Cleveland Cavaliers",
-  WAS: "Washington Wizards",
-  CHA: "Charlotte Hornets",
-  OKC: "Oklahoma City Thunder",
-  LAC: "Los Angeles Clippers",
-  BKN: "Brooklyn Nets",
-  NOP: "New Orleans Pelicans",
-  POR: "Portland Trail Blazers",
-  SAS: "San Antonio Spurs",
-  DEN: "Denver Nuggets",
+  CHI: "Galapagar",
+  PHI: "Boadilla del Monte",
+  DAL: "Aranjuez",
+  TOR: "Distrito Olímpico",
+  MIL: "Estudiantes",
+  PHX: "San Sebastián de los Reyes",
+  SAC: "Alcobendas",
+  UTA: "Coslada",
+  DET: "Leganés",
+  IND: "Getafe",
+  HOU: "Parla",
+  MEM: "Collado Villalba",
+  MIN: "Valdemoro",
+  ORL: "Moratalaz",
+  ATL: "Torrejón de Ardoz",
+  CLE: "Alcorcón",
+  WAS: "Pozuelo de Alarcón",
+  CHA: "Villaviciosa de Odón",
+  OKC: "Rivas-Vaciamadrid",
+  LAC: "Arroyomolinos",
+  BKN: "San Fernando de Henares",
+  NOP: "Villanueva de la Cañada",
+  POR: "Majadahonda",
+  SAS: "Tres Cantos",
+  DEN: "Colmenar Viejo",
 } as const
 
 // Función para obtener la abreviatura del equipo configurado
@@ -120,20 +119,6 @@ const getDisplayTeamName = (abbr: string): string => {
   }
   // De lo contrario, devolver el nombre del mapa
   return teamNames[abbr] || abbr
-}
-
-// Colores para equipos (simplificado, solo algunos equipos)
-const teamColors: { [key: string]: string } = {
-  LAL: "bg-purple-700",
-  BOS: "bg-green-700",
-  MIA: "bg-red-700",
-  NYK: "bg-blue-700",
-  GSW: "bg-yellow-600",
-  CHI: "bg-red-600",
-  PHI: "bg-blue-600",
-  DAL: "bg-blue-500",
-  // Color por defecto para equipos sin color específico
-  default: "bg-gray-600",
 }
 
 // Función para agrupar partidos por mes
@@ -373,17 +358,10 @@ export default function Home() {
     const opponentName = getDisplayTeamName(opponentAbbr)
 
     return {
-      team: teamAbbr,
-      opponent: opponentAbbr,
       teamName,
       opponentName,
       isAway,
     }
-  }
-
-  // Obtener color de equipo
-  const getTeamColor = (teamCode: string) => {
-    return teamColors[teamCode] || teamColors.default
   }
 
   // Formatear fecha para mostrar
@@ -430,7 +408,7 @@ export default function Home() {
               <BarChart2 className="h-5 w-5 text-blue-400 mr-3" />
               <div className="flex items-center">
                 <span className="text-gray-400 mr-2 text-sm md:text-base">Análisis de</span>
-                <span className="font-semibold text-white text-base md:text-lg tracking-wide">{TEAM_NAME}</span>
+                <span className="font-semibold text-white text-base md:text-lg tracking-wide">Majadahonda</span>
               </div>
             </div>
 
@@ -771,7 +749,7 @@ export default function Home() {
                         <h3 className="text-xl font-semibold mb-4 pl-2 border-l-4 border-yellow-500">{month}</h3>
                         <div className="grid gap-4">
                           {monthGames.map((game) => {
-                            const { team, opponent, teamName, opponentName } = getTeamsFromMatchup(game.MATCHUP || "")
+                            const { teamName, opponentName } = getTeamsFromMatchup(game.MATCHUP || "")
 
                             // Determine win/loss status - FIX: Verificar que los valores no sean undefined
                             const hasScores = game.PTS !== undefined && game.PTS_OPP !== undefined
@@ -792,6 +770,11 @@ export default function Home() {
                               } else {
                                 resultStatus = "tie"
                               }
+                            }
+
+                            // Después de la lógica que determina resultStatus
+                            if (resultStatus === "tie") {
+                              return null // No renderizar partidos empatados
                             }
 
                             return (
@@ -847,11 +830,6 @@ export default function Home() {
                                         <div className="flex items-center justify-between">
                                           {/* Home team */}
                                           <div className="flex items-center">
-                                            <div
-                                              className={`${getTeamColor(team)} w-10 h-10 rounded-full flex items-center justify-center mr-3`}
-                                            >
-                                              <span className="font-bold text-white">{team.substring(0, 3)}</span>
-                                            </div>
                                             <div>
                                               <p className="font-semibold">{teamName}</p>
                                               {hasScores ? (
@@ -882,11 +860,6 @@ export default function Home() {
                                                   Puntuación no disponible
                                                 </p>
                                               )}
-                                            </div>
-                                            <div
-                                              className={`${getTeamColor(opponent)} w-10 h-10 rounded-full flex items-center justify-center ml-3`}
-                                            >
-                                              <span className="font-bold text-white">{opponent.substring(0, 3)}</span>
                                             </div>
                                           </div>
                                         </div>

@@ -1,46 +1,50 @@
 export const playersData: Record<string, { image: string; name: string }> = {
   "2544": {
     image: "/lebron-james.png",
-    name: "LeBron James",
+    name: "Carlos Mendoza",
   },
   "201939": {
-    image: "/prueba_foto.jpg",
-    name: "Guillermo Gomez",
+    image: "/Jugador1.png",
+    name: "Luis Fernández",
   },
   "1626172": {
-    image: "/kevon-looney.png",
-    name: "Kevon Looney",
+    image: "/Jugador2.png",
+    name: "Andrés Rivas",
   },
   "1627780": {
-    image: "/gary-payton-II.png",
-    name: "Gary Payton II",
+    image: "/Jugador3.png",
+    name: "Javier Morales",
   },
   "1627814": {
-    image: "/damion-lee.webp",
-    name: "Damion Lee",
+    image: "/Jugador4.webp",
+    name: "Miguel Ángel Cruz",
   },
   "1629673": {
-    image: "/jordan-poole.webp",
-    name: "Jordan Poole",
+    image: "/Jugador5.webp",
+    name: "Sergio Blanco",
   },
   "1630228": {
-    image: "/jonathan-kuminga.avif",
-    name: "Jonathan Kuminga",
+    image: "/Jugador6.webp",
+    name: "Diego Herrera",
   },
   "1630541": {
-    image: "/moses-moody.avif",
-    name: "Moses Moody",
+    image: "/Jugador7.webp",
+    name: "Adrián Castillo",
   },
   "202691": {
-    image: "/202691.avif",
-    name: "Klay Thompson",
+    image: "/Jugador8.webp",
+    name: "Raúl Vargas",
   },
   "203110": {
-    image: "/203110.avif",
-    name: "Draymond Green",
+    image: "/Jugador9.webp",
+    name: "Pablo Domínguez",
   },
   "203952": {
-    image: "/andrew-wiggins.webp",
-    name: "Andrew Wiggins",
+    image: "/Jugador10.webp",
+    name: "Emilio Serrano",
+  },
+  "1630288": {
+    image: "/Jugador11.webp",
+    name: "Emilio Serrano",
   },
 }
